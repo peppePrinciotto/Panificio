@@ -1,4 +1,6 @@
-js/config.js
+# config.js è committato perché contiene solo chiavi pubbliche frontend
+# (Stripe publishable key e PayPal client ID sono by-design pubbliche)
+# NON mettere mai qui la Stripe SECRET key (sk_...) — quella va solo su server
 .env
 .env.local
 .env.*

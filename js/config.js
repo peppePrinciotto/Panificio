@@ -1,0 +1,48 @@
+// config.js — Unico file da modificare per prezzi, chiavi API e impostazioni
+// NON committare questo file con chiavi reali
+
+const CONFIG = {
+  stripe: {
+    publishableKey: 'pk_test_XXXX', // TODO: sostituire con chiave reale da stripe.com
+    currency: 'eur',
+  },
+  paypal: {
+    clientId: 'XXXX', // TODO: sostituire con client ID reale da paypal.com/it/business
+    currency: 'EUR',
+  },
+  formspree: {
+    orderEndpoint: 'https://formspree.io/f/XXXXXXXX',       // TODO: sostituire con endpoint reale
+    reservationEndpoint: 'https://formspree.io/f/YYYYYYYY', // TODO: sostituire con endpoint reale
+  },
+  shipping: {
+    freeThreshold: 60,  // spedizione gratuita sopra questa cifra (€)
+    flatRate: 8,        // costo spedizione flat (€)
+  },
+  products: [
+    {
+      id: 'biscotti',
+      name: 'Biscotti Tradizionali',
+      pricePerKg: 14,
+      minKg: 0.5,
+      placeholderColor: '#C4A882',
+      description: 'Biscotti artigianali preparati con ricette tramandate da generazioni, ingredienti selezionati e cottura nel forno a legna.',
+    },
+    {
+      id: 'cudduredde',
+      name: 'Cudduredde', // ⚠️ Nome dialettale siciliano — NON modificare mai
+      pricePerKg: 16,
+      minKg: 0.5,
+      placeholderColor: '#B8956A',
+      description: 'Dolci tipici siciliani dalla forma tradizionale, preparati per le festività con amore e ingredienti del territorio.',
+    },
+    {
+      id: 'pane-duro',
+      name: 'Pane Duro',
+      pricePerKg: 10,
+      minKg: 0.5,
+      placeholderColor: '#9A7B5C',
+      description: 'Pane duro siciliano a lunga conservazione, ideale per accompagnare formaggi e salumi locali o da gustare con olio extravergine.',
+    },
+  ],
+  apiBaseUrl: '',
+};
