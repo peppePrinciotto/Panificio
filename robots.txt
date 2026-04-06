@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin
+Disallow: /.claude/
+Disallow: /docs/
+
+Sitemap: https://panificioroccafiorita.netlify.app/sitemap.xml

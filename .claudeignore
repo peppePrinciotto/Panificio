@@ -1,0 +1,10 @@
+node_modules/
+.git/
+*.min.js
+*.map
+dist/
+build/
+.env
+.env.*
+*.pem
+*.key

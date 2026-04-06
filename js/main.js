@@ -1,0 +1,603 @@
+// main.js — UI orchestration: navbar, animazioni, carrello UI, modal, form
+// Dipende da: config.js, cart.js, checkout.js
+
+(function () {
+  'use strict';
+
+  // ============================================================
+  // DOMContentLoaded — punto di ingresso
+  // ============================================================
+  document.addEventListener('DOMContentLoaded', function () {
+    initCopyrightYear();
+    initNavbar();
+    initHamburger();
+    initProductCards();
+    initCartSidebar();
+    initCheckoutModal();
+    initScrollAnimations();
+    initPrenotaForm();
+    initLegalModals();
+    initDateMin();
+    initCookieBanner();
+    initContentFromStorage();
+    initCartSwipeClose();
+  });
+
+  // ============================================================
+  // Sanitizzazione XSS (prevenzione DOM injection)
+  // ============================================================
+  function sanitize(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  // ============================================================
+  // Anno copyright dinamico
+  // ============================================================
+  function initCopyrightYear() {
+    const el = document.getElementById('copyright-year');
+    if (el) el.textContent = new Date().getFullYear();
+  }
+
+  // ============================================================
+  // Navbar: trasparente → solida dopo 80px scroll
+  // ============================================================
+  function initNavbar() {
+    const navbar = document.getElementById('navbar');
+    if (!navbar) return;
+
+    function onScroll() {
+      navbar.classList.toggle('scrolled', window.scrollY > 80);
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll(); // stato iniziale
+  }
+
+  // ============================================================
+  // Hamburger menu mobile
+  // ============================================================
+  function initHamburger() {
+    const btn     = document.getElementById('hamburger-btn');
+    const overlay = document.getElementById('nav-overlay');
+    if (!btn) return;
+
+    function openNav() {
+      document.body.classList.add('nav-open');
+      btn.setAttribute('aria-expanded', 'true');
+      btn.setAttribute('aria-label', 'Chiudi menu');
+    }
+
+    function closeNav() {
+      document.body.classList.remove('nav-open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-label', 'Apri menu');
+    }
+
+    btn.addEventListener('click', function () {
+      document.body.classList.contains('nav-open') ? closeNav() : openNav();
+    });
+
+    if (overlay) overlay.addEventListener('click', closeNav);
+
+    // Chiudi nav mobile al click su un link
+    document.querySelectorAll('.navbar-nav a').forEach(link => {
+      link.addEventListener('click', closeNav);
+    });
+
+    // Chiudi con ESC
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('nav-open')) closeNav();
+    });
+  }
+
+  // ============================================================
+  // Prodotti — legge da localStorage (admin) con fallback a CONFIG
+  // ============================================================
+  function getProductCatalog() {
+    try {
+      const stored = localStorage.getItem('roccafiorita_products');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Mostra solo prodotti disponibili (available !== false)
+        return parsed.filter(p => p.available !== false);
+      }
+    } catch (_) {}
+    return CONFIG.products;
+  }
+
+  // ============================================================
+  // Card prodotti — generate dai prodotti correnti
+  // ============================================================
+  function initProductCards() {
+    const grid = document.getElementById('products-grid');
+    if (!grid) return;
+
+    const products = getProductCatalog();
+
+    products.forEach(product => {
+      const card = document.createElement('article');
+      card.className = 'product-card fade-in';
+      card.setAttribute('aria-label', sanitize(product.name));
+
+      const imgContent = product.imageUrl
+        ? `<img src="${sanitize(product.imageUrl)}" alt="${sanitize(product.name)}" loading="lazy" />`
+        : `<!-- TODO: sostituire .product-img con immagine reale -->
+           <div class="product-img" style="background-color:${sanitize(product.placeholderColor || '#C4A882')};"
+                role="img" aria-label="${sanitize(product.name)}">${sanitize(product.name)}</div>`;
+
+      card.innerHTML = `
+        ${imgContent}
+        <div class="product-body">
+          <h3 class="product-name">${sanitize(product.name)}</h3>
+          <p class="product-desc">${sanitize(product.shortDescription || product.description || '')}</p>
+
+          <div class="qty-selector">
+            <label for="qty-${sanitize(product.id)}">Quantità</label>
+            <div class="qty-input-wrap">
+              <button type="button" class="qty-dec" data-id="${sanitize(product.id)}"
+                      aria-label="Riduci quantità">−</button>
+              <input type="number" id="qty-${sanitize(product.id)}"
+                     value="${product.minKg}" min="${product.minKg}"
+                     step="${product.minKg}" aria-label="Kg di ${sanitize(product.name)}" />
+              <button type="button" class="qty-inc" data-id="${sanitize(product.id)}"
+                      aria-label="Aumenta quantità">+</button>
+            </div>
+          </div>
+
+          <div class="product-footer">
+            <div class="product-price-block">
+              <span class="product-price-label">Prezzo al kg</span>
+              <span class="price">€${product.pricePerKg.toFixed(2)}</span>
+            </div>
+            <button type="button" class="btn btn-primary btn-add-cart btn-sm"
+                    data-id="${sanitize(product.id)}"
+                    aria-label="Aggiungi ${sanitize(product.name)} al carrello">
+              Aggiungi
+            </button>
+          </div>
+        </div>`;
+
+      // Decrement
+      card.querySelector('.qty-dec').addEventListener('click', function () {
+        const input = card.querySelector(`#qty-${product.id}`);
+        const val   = parseFloat(input.value);
+        const next  = parseFloat((val - product.minKg).toFixed(2));
+        if (next >= product.minKg) input.value = next;
+      });
+
+      // Increment
+      card.querySelector('.qty-inc').addEventListener('click', function () {
+        const input = card.querySelector(`#qty-${product.id}`);
+        const val   = parseFloat(input.value);
+        input.value = parseFloat((val + product.minKg).toFixed(2));
+      });
+
+      // Aggiungi al carrello
+      card.querySelector('.btn-add-cart').addEventListener('click', function () {
+        const btn   = this;
+        const input = card.querySelector(`#qty-${product.id}`);
+        const kg    = parseFloat(input.value);
+
+        if (isNaN(kg) || kg < product.minKg) return;
+
+        Cart.add(product.id, kg);
+        openCartSidebar();
+
+        // Feedback visivo 500ms
+        btn.classList.add('adding');
+        setTimeout(() => btn.classList.remove('adding'), 500);
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  // ============================================================
+  // Sidebar Carrello
+  // ============================================================
+  function initCartSidebar() {
+    const toggleBtn   = document.getElementById('cart-toggle-btn');
+    const closeBtn    = document.getElementById('cart-close-btn');
+    const overlay     = document.getElementById('cart-overlay');
+    const checkoutBtn = document.getElementById('checkout-open-btn');
+
+    if (toggleBtn) toggleBtn.addEventListener('click', openCartSidebar);
+    if (closeBtn)  closeBtn.addEventListener('click', closeCartSidebar);
+    if (overlay)   overlay.addEventListener('click', closeCartSidebar);
+
+    if (checkoutBtn) {
+      checkoutBtn.addEventListener('click', function () {
+        if (Cart.getCount() === 0) return;
+        closeCartSidebar();
+        openCheckoutModal();
+      });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('cart-open')) {
+        closeCartSidebar();
+      }
+    });
+  }
+
+  // Swipe-to-close per carrello (bottom sheet mobile)
+  function initCartSwipeClose() {
+    const sidebar = document.getElementById('cart-sidebar');
+    if (!sidebar) return;
+
+    let startY = 0;
+    sidebar.addEventListener('touchstart', function (e) {
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    sidebar.addEventListener('touchend', function (e) {
+      const deltaY = e.changedTouches[0].clientY - startY;
+      if (deltaY > 80) closeCartSidebar();
+    }, { passive: true });
+  }
+
+  function openCartSidebar() {
+    document.body.classList.add('cart-open');
+    const btn = document.getElementById('cart-toggle-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+    const sidebar = document.getElementById('cart-sidebar');
+    if (sidebar) sidebar.focus();
+  }
+
+  function closeCartSidebar() {
+    document.body.classList.remove('cart-open');
+    const btn = document.getElementById('cart-toggle-btn');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+
+  // ============================================================
+  // Modal Checkout
+  // ============================================================
+  function initCheckoutModal() {
+    const overlay  = document.getElementById('checkout-overlay');
+    const closeBtn = document.getElementById('checkout-close-btn');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeCheckoutModal);
+
+    if (overlay) {
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeCheckoutModal();
+      });
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.body.classList.contains('modal-open')) {
+        closeCheckoutModal();
+      }
+    });
+
+    // Evento da checkout.js (bottone "Chiudi" dopo successo)
+    document.addEventListener('checkout:close', closeCheckoutModal);
+  }
+
+  function openCheckoutModal() {
+    document.body.classList.add('modal-open');
+    document.dispatchEvent(new CustomEvent('checkout:opened'));
+    const modal = document.getElementById('checkout-modal');
+    if (modal) modal.focus();
+  }
+
+  function closeCheckoutModal() {
+    document.body.classList.remove('modal-open');
+    // Resetta il form se era in stato successo
+    if (typeof CheckoutResetForm === 'function') CheckoutResetForm();
+  }
+
+  // ============================================================
+  // Scroll animations — IntersectionObserver
+  // ============================================================
+  function initScrollAnimations() {
+    if (!('IntersectionObserver' in window)) {
+      document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+  }
+
+  // ============================================================
+  // Form Prenotazione
+  // ============================================================
+  function initPrenotaForm() {
+    const form = document.getElementById('prenota-form');
+    if (!form) return;
+
+    const fields = [
+      { id: 'prenota-nome',     label: 'Nome e cognome',  required: true },
+      { id: 'prenota-tel',      label: 'Telefono',        required: true, pattern: /^[\d\s\+\-\(\)]{7,20}$/ },
+      { id: 'prenota-data',     label: 'Data di ritiro',  required: true },
+      { id: 'prenota-prodotto', label: 'Prodotto',        required: true },
+    ];
+
+    // Validazione onblur campo per campo
+    fields.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (el) el.addEventListener('blur', () => validateField(f));
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Honeypot check
+      const honeypot = form.querySelector('input[name="website"]');
+      if (honeypot && honeypot.value) {
+        showPrenotaSuccess(); // finge successo, non invia
+        return;
+      }
+
+      // Rate limiting: 1 invio per minuto
+      if (!canSubmitForm('prenota')) {
+        const btn = form.querySelector('[type="submit"]');
+        if (btn) btn.textContent = 'Attendi prima di rinviare';
+        setTimeout(() => {
+          if (btn) btn.textContent = btn.dataset.originalText || 'Invia prenotazione';
+        }, 5000);
+        return;
+      }
+
+      let allValid = true;
+      fields.forEach(f => {
+        if (!validateField(f)) allValid = false;
+      });
+
+      if (!allValid) return;
+
+      const submitBtn = form.querySelector('[type="submit"]');
+      setButtonLoading(submitBtn, true);
+
+      // Salva prenotazione in localStorage per il pannello admin
+      saveReservationToStorage(form);
+
+      const endpoint = CONFIG.formspree.reservationEndpoint;
+
+      if (!endpoint || endpoint.includes('YYYYYYYY')) {
+        setTimeout(() => {
+          showPrenotaSuccess();
+          form.reset();
+          setButtonLoading(submitBtn, false);
+        }, 800);
+        return;
+      }
+
+      const data = new FormData(form);
+
+      fetch(endpoint, {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' },
+      })
+        .then(function (res) {
+          if (res.ok) {
+            showPrenotaSuccess();
+            form.reset();
+          } else {
+            return res.json().then(function (json) {
+              throw new Error(json.error || 'Errore di invio');
+            });
+          }
+        })
+        .catch(function (err) {
+          console.error('[Prenota] Errore:', err);
+          const btn = form.querySelector('[type="submit"]');
+          if (btn) btn.textContent = 'Errore — riprova';
+        })
+        .finally(function () {
+          setButtonLoading(submitBtn, false);
+        });
+    });
+
+    function validateField(f) {
+      const el  = document.getElementById(f.id);
+      const err = document.getElementById(f.id + '-err');
+      if (!el) return true;
+
+      el.classList.remove('invalid');
+      if (err) err.textContent = '';
+
+      const val = el.value.trim();
+
+      if (f.required && !val) {
+        el.classList.add('invalid');
+        if (err) err.textContent = `${f.label} è obbligatorio`;
+        return false;
+      }
+
+      if (f.pattern && val && !f.pattern.test(val)) {
+        el.classList.add('invalid');
+        if (err) err.textContent = `${f.label} non valido`;
+        return false;
+      }
+
+      return true;
+    }
+
+    function showPrenotaSuccess() {
+      const success = document.getElementById('prenota-success');
+      if (success) {
+        success.classList.add('visible');
+        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (form) form.style.display = 'none';
+    }
+  }
+
+  // Salva prenotazione in localStorage per il pannello admin
+  function saveReservationToStorage(form) {
+    try {
+      const reservations = JSON.parse(localStorage.getItem('roccafiorita_reservations') || '[]');
+      reservations.push({
+        id:        'RES-' + Date.now(),
+        createdAt: new Date().toISOString(),
+        nome:      sanitize(form.querySelector('#prenota-nome')  ? form.querySelector('#prenota-nome').value.trim()  : ''),
+        telefono:  sanitize(form.querySelector('#prenota-tel')   ? form.querySelector('#prenota-tel').value.trim()   : ''),
+        data:      form.querySelector('#prenota-data')           ? form.querySelector('#prenota-data').value         : '',
+        prodotto:  form.querySelector('#prenota-prodotto')       ? form.querySelector('#prenota-prodotto').value     : '',
+        note:      sanitize(form.querySelector('#prenota-note')  ? form.querySelector('#prenota-note').value.trim()  : ''),
+        status:    'pending',
+      });
+      localStorage.setItem('roccafiorita_reservations', JSON.stringify(reservations));
+    } catch (_) {}
+  }
+
+  // ============================================================
+  // Rate limiting lato client
+  // ============================================================
+  function canSubmitForm(formType) {
+    const key  = `ratelimit_${formType}`;
+    const last = parseInt(localStorage.getItem(key) || '0');
+    const now  = Date.now();
+    if (now - last < 60000) return false;
+    localStorage.setItem(key, now.toString());
+    return true;
+  }
+
+  // Imposta data minima prenotazione a domani
+  function initDateMin() {
+    const dateInput = document.getElementById('prenota-data');
+    if (!dateInput) return;
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    dateInput.min = tomorrow.toISOString().split('T')[0];
+  }
+
+  // ============================================================
+  // Modali legali (Privacy, Cookie, Termini)
+  // ============================================================
+  function initLegalModals() {
+    document.addEventListener('click', function (e) {
+      const trigger = e.target.closest('[data-legal]');
+      if (trigger) {
+        e.preventDefault();
+        const key = trigger.dataset.legal;
+        openLegalModal(key);
+      }
+
+      const closeBtn = e.target.closest('[data-close-legal]');
+      if (closeBtn) {
+        const key = closeBtn.dataset.closeLegal;
+        closeLegalModal(key);
+      }
+    });
+
+    document.querySelectorAll('.legal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) {
+          overlay.classList.remove('open');
+        }
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.legal-overlay.open').forEach(el => el.classList.remove('open'));
+      }
+    });
+  }
+
+  function openLegalModal(key) {
+    const el = document.getElementById(`modal-${key}`);
+    if (el) el.classList.add('open');
+  }
+
+  function closeLegalModal(key) {
+    const el = document.getElementById(`modal-${key}`);
+    if (el) el.classList.remove('open');
+  }
+
+  // ============================================================
+  // Cookie Banner
+  // ============================================================
+  function initCookieBanner() {
+    const banner     = document.getElementById('cookie-banner');
+    const acceptBtn  = document.getElementById('cookie-accept-btn');
+    const minimalBtn = document.getElementById('cookie-minimal-btn');
+
+    if (!banner) return;
+
+    const consent = localStorage.getItem('cookie_consent');
+    if (consent) {
+      banner.classList.add('hidden');
+      return;
+    }
+
+    function dismissBanner(value) {
+      localStorage.setItem('cookie_consent', value);
+      banner.classList.add('hidden');
+    }
+
+    if (acceptBtn)  acceptBtn.addEventListener('click',  () => dismissBanner('all'));
+    if (minimalBtn) minimalBtn.addEventListener('click', () => dismissBanner('minimal'));
+  }
+
+  // ============================================================
+  // Contenuti da localStorage (gestiti dall'admin)
+  // ============================================================
+  function initContentFromStorage() {
+    try {
+      const stored = localStorage.getItem('roccafiorita_content');
+      if (!stored) return;
+      const content = JSON.parse(stored);
+
+      // Anno fondazione
+      if (content.anno) {
+        document.querySelectorAll('.anno').forEach(el => {
+          el.textContent = sanitize(content.anno);
+        });
+      }
+
+      // Indirizzo
+      if (content.indirizzo) {
+        document.querySelectorAll('[data-content="indirizzo"]').forEach(el => {
+          el.textContent = sanitize(content.indirizzo);
+        });
+      }
+
+      // Telefono
+      if (content.telefono) {
+        document.querySelectorAll('[data-content="telefono"]').forEach(el => {
+          el.textContent = sanitize(content.telefono);
+          if (el.tagName === 'A') el.href = 'tel:' + content.telefono.replace(/\s/g, '');
+        });
+      }
+
+      // Storia
+      if (content.storia) {
+        const storiaEl = document.getElementById('storia-testo');
+        if (storiaEl) storiaEl.textContent = content.storia;
+      }
+
+    } catch (_) {}
+  }
+
+  // ============================================================
+  // Helper: pulsante loading state
+  // ============================================================
+  function setButtonLoading(btn, loading) {
+    if (!btn) return;
+    if (loading) {
+      btn.disabled = true;
+      btn.dataset.originalText = btn.textContent;
+      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Invio in corso…';
+    } else {
+      btn.disabled = false;
+      btn.textContent = btn.dataset.originalText || 'Invia';
+    }
+  }
+
+}());

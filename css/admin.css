@@ -1,0 +1,966 @@
+/* ============================================================
+   Panificio Roccafiorita — Admin Panel Styles
+   Stile separato dal sito pubblico: funzionale, stesso design system
+   ============================================================ */
+
+/* ============================================================
+   1. Custom Properties
+   ============================================================ */
+:root {
+  --color-bg:          #F8F6F1;
+  --color-surface:     #FFFFFF;
+  --color-dark:        #1C1009;
+  --color-espresso:    #3D2314;
+  --color-gold:        #A07830;
+  --color-gold-light:  #C9A55A;
+  --color-cream:       #E8DCC8;
+  --color-text-muted:  #7A6550;
+  --color-border:      #E8DCC8;
+  --color-success:     #2D7A47;
+  --color-warning:     #C4870A;
+  --color-danger:      #A03020;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Lora', Georgia, serif;
+
+  --sidebar-w:    240px;
+  --topbar-h:     60px;
+  --radius:       6px;
+  --shadow-sm:    0 1px 3px rgba(28,16,9,0.10);
+  --shadow-md:    0 4px 16px rgba(28,16,9,0.14);
+  --transition:   200ms ease;
+}
+
+/* ============================================================
+   2. Reset & Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-dark);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+input, textarea, select { font-family: var(--font-body); }
+
+/* ============================================================
+   3. Login Screen
+   ============================================================ */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-espresso);
+  padding: 2rem;
+}
+
+.login-card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--shadow-md);
+}
+
+.login-logo {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-espresso);
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.login-logo span { font-weight: 400; }
+
+.login-title {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-align: center;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 1.75rem;
+}
+
+.login-error,
+.login-lockout {
+  background: #FFF0EE;
+  border-left: 3px solid var(--color-danger);
+  color: var(--color-danger);
+  padding: 0.65rem 0.875rem;
+  border-radius: 3px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.login-lockout {
+  background: #FFF8E8;
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.login-field {
+  margin-bottom: 1.25rem;
+}
+
+.login-field label {
+  display: block;
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: var(--color-dark);
+  margin-bottom: 0.4rem;
+}
+
+.login-field input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  color: var(--color-dark);
+  background: var(--color-bg);
+  transition: border-color var(--transition);
+}
+
+.login-field input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--color-espresso);
+  color: #F5EFE0;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: background var(--transition);
+}
+
+.login-btn:hover { background: var(--color-dark); }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ============================================================
+   4. Admin Layout
+   ============================================================ */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  width: var(--sidebar-w);
+  background: var(--color-dark);
+  color: #F5EFE0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
+  transition: transform var(--transition);
+}
+
+.sidebar-brand {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: #F5EFE0;
+}
+
+.sidebar-brand span { font-weight: 400; }
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+  flex: 1;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.9rem;
+  color: rgba(245, 239, 224, 0.7);
+  transition: color var(--transition), background var(--transition);
+  border-left: 3px solid transparent;
+}
+
+.sidebar-link svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+  color: #F5EFE0;
+  background: rgba(255,255,255,0.06);
+  border-left-color: var(--color-gold);
+}
+
+.sidebar-link.active {
+  color: var(--color-gold-light);
+  border-left-color: var(--color-gold);
+}
+
+.sidebar-sep {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 0.75rem 1.5rem;
+}
+
+.logout-btn {
+  color: rgba(245, 239, 224, 0.5);
+  margin-top: auto;
+}
+
+.logout-btn:hover {
+  color: #F5EFE0;
+  background: rgba(160, 48, 32, 0.25);
+  border-left-color: var(--color-danger);
+}
+
+/* Main area */
+.admin-main {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Topbar */
+.admin-topbar {
+  height: var(--topbar-h);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-espresso);
+  flex: 1;
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+}
+
+.topbar-user svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+}
+
+.sidebar-toggle-btn {
+  display: none;
+  padding: 6px;
+  color: var(--color-dark);
+}
+
+.sidebar-toggle-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* Admin section content */
+.admin-section {
+  padding: 1.75rem 2rem;
+  flex: 1;
+}
+
+/* ============================================================
+   5. Cards & Stats
+   ============================================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-espresso);
+  line-height: 1.1;
+}
+
+.stat-trend {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  color: var(--color-text-muted);
+}
+
+.stat-trend.up   { color: var(--color-success); }
+.stat-trend.down { color: var(--color-danger); }
+
+/* Panel boxes */
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-espresso);
+}
+
+.panel-body {
+  padding: 1.25rem;
+}
+
+/* Month nav */
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.month-nav-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.825rem;
+  color: var(--color-dark);
+  transition: background var(--transition);
+}
+
+.month-nav-btn:hover { background: var(--color-bg); }
+
+.month-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* ============================================================
+   6. Tabelle
+   ============================================================ */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 0.625rem 0.875rem;
+  background: var(--color-bg);
+  border-bottom: 2px solid var(--color-border);
+  font-weight: 600;
+  font-size: 0.775rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:hover { background: var(--color-bg); }
+.admin-table tbody tr:last-child td { border-bottom: none; }
+
+.admin-table .total-row td {
+  font-weight: 600;
+  background: var(--color-bg);
+  border-top: 2px solid var(--color-border);
+}
+
+/* ============================================================
+   7. Prodotti
+   ============================================================ */
+.product-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.product-list-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-espresso);
+}
+
+.product-card-admin {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  transition: box-shadow var(--transition);
+}
+
+.product-card-admin:hover { box-shadow: var(--shadow-sm); }
+
+.product-img-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--color-cream);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.product-info { flex: 1; min-width: 0; }
+
+.product-info-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-dark);
+}
+
+.product-info-desc {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-info-price {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-gold);
+  white-space: nowrap;
+}
+
+.product-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Badge disponibilità */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.badge-success { background: #E6F4EE; color: var(--color-success); }
+.badge-muted   { background: #F0EBE5; color: var(--color-text-muted); }
+.badge-warning { background: #FFF8E8; color: var(--color-warning); }
+.badge-pending { background: #FFF8E8; color: var(--color-warning); }
+.badge-danger  { background: #FFF0EE; color: var(--color-danger); }
+
+/* ============================================================
+   8. Prenotazioni
+   ============================================================ */
+.filters-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.filter-btn {
+  padding: 0.375rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 100px;
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+  transition: all var(--transition);
+}
+
+.filter-btn:hover { border-color: var(--color-gold); color: var(--color-dark); }
+.filter-btn.active { background: var(--color-espresso); border-color: var(--color-espresso); color: #F5EFE0; }
+
+.reservation-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.reservation-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.reservation-date {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-espresso);
+  white-space: nowrap;
+}
+
+.reservation-name  { font-weight: 600; }
+.reservation-product { color: var(--color-text-muted); font-size: 0.875rem; }
+
+.reservation-note {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin-bottom: 0.625rem;
+}
+
+.reservation-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   9. Grafico Canvas
+   ============================================================ */
+.chart-container {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+}
+
+#sales-chart {
+  display: block;
+  width: 100%;
+  max-width: 700px;
+  height: 180px;
+}
+
+/* ============================================================
+   10. Form Elementi Admin
+   ============================================================ */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--color-dark);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.char-counter {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  color: var(--color-dark);
+  background: var(--color-bg);
+  transition: border-color var(--transition);
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.form-group input.invalid,
+.form-group textarea.invalid {
+  border-color: var(--color-danger);
+}
+
+.form-error {
+  font-size: 0.775rem;
+  color: var(--color-danger);
+  min-height: 1rem;
+}
+
+/* Toggle switch */
+.form-toggle-group { margin-bottom: 1rem; }
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.toggle-label input[type="checkbox"] { display: none; }
+
+.toggle-track {
+  width: 40px;
+  height: 22px;
+  background: var(--color-border);
+  border-radius: 100px;
+  position: relative;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: transform var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-label input:checked + .toggle-track { background: var(--color-success); }
+.toggle-label input:checked + .toggle-track::after { transform: translateX(18px); }
+
+/* ============================================================
+   11. Bottoni Admin
+   ============================================================ */
+.btn-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+}
+
+.btn-admin svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.btn-primary { background: var(--color-espresso); color: #F5EFE0; }
+.btn-primary:hover { background: var(--color-dark); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+}
+.btn-ghost:hover { border-color: var(--color-dark); color: var(--color-dark); }
+
+.btn-danger { background: var(--color-danger); color: white; }
+.btn-danger:hover { background: #8a2818; }
+
+.btn-success { background: var(--color-success); color: white; }
+.btn-warning { background: var(--color-warning); color: white; }
+
+.btn-sm {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.btn-icon {
+  padding: 0.375rem;
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+
+.btn-icon:hover { color: var(--color-dark); border-color: var(--color-dark); }
+
+.btn-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+/* ============================================================
+   12. Modal
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 16, 9, 0.55);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-md);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-espresso);
+}
+
+.modal-close-btn {
+  color: var(--color-text-muted);
+  padding: 4px;
+  transition: color var(--transition);
+}
+
+.modal-close-btn:hover { color: var(--color-dark); }
+
+.modal-close-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.5rem;
+}
+
+/* ============================================================
+   13. Orari Table
+   ============================================================ */
+.orari-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.orari-table td {
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.875rem;
+}
+
+.orari-table td:first-child {
+  font-weight: 600;
+  width: 120px;
+}
+
+.orari-table input {
+  padding: 0.3rem 0.5rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 3px;
+  font-size: 0.875rem;
+  font-family: var(--font-body);
+  width: 100%;
+}
+
+.orari-table input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+/* ============================================================
+   14. Info Banner
+   ============================================================ */
+.info-banner {
+  background: #FFF8E8;
+  border: 1px solid #E8D08A;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--color-dark);
+  line-height: 1.6;
+}
+
+.info-banner strong { color: var(--color-espresso); }
+.info-banner a { color: var(--color-gold); text-decoration: underline; }
+
+/* ============================================================
+   15. Empty states
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-text-muted);
+}
+
+.empty-state svg {
+  width: 48px;
+  height: 48px;
+  stroke: var(--color-cream);
+  fill: none;
+  stroke-width: 1.5;
+  margin: 0 auto 1rem;
+  display: block;
+}
+
+/* ============================================================
+   16. Responsive Admin
+   ============================================================ */
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+
+  .admin-sidebar {
+    transform: translateX(-240px);
+    width: 240px;
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .admin-main {
+    margin-left: 0;
+  }
+
+  .sidebar-toggle-btn {
+    display: flex;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-section {
+    padding: 1.25rem 1rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .product-card-admin {
+    flex-wrap: wrap;
+  }
+}

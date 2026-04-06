@@ -1,0 +1,7 @@
+js/config.js
+.env
+.env.local
+.env.*
+*.pem
+*.key
+.DS_Store
