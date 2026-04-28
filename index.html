@@ -36,8 +36,6 @@
 
       <nav class="navbar-nav" id="navbar-nav" aria-label="Navigazione principale">
         <a href="#prodotti">Prodotti</a>
-        <a href="#storia">La Nostra Storia</a>
-        <a href="#prenota">Prenota</a>
         <a href="#contatti">Contatti</a>
       </nav>
 
@@ -68,17 +66,13 @@
   <section class="hero" id="home" aria-labelledby="hero-heading">
     <!-- TODO: sostituire ::before con background-image URL dell'immagine hero -->
     <div class="hero-content">
-      <span class="hero-eyebrow">Artigiani del pane dal [ANNO]</span>
-      <h1 id="hero-heading">
-        Il sapore antico<br />
-        della <em>Sicilia autentica</em>
-      </h1>
+      <span class="hero-eyebrow">Panificio Roccafiorita</span>
+      <h1 id="hero-heading">Tradizione e artigianalità <em>dal 1970</em></h1>
       <p class="hero-tagline">
-        Farine selezionate, lievito madre e ricette di famiglia tramandate di generazione in generazione. Spediamo i nostri prodotti in tutta Italia.
+        Preparati ogni mattina con ingredienti selezionati e il rispetto di sempre per la tradizione. Ordina online e ricevili a casa tua in tutta Italia.
       </p>
       <div class="hero-ctas">
         <a href="#prodotti" class="btn btn-primary">Scopri i prodotti</a>
-        <a href="#prenota" class="btn btn-outline">Prenota il pane fresco</a>
       </div>
     </div>
 
@@ -95,7 +89,7 @@
        ============================================================ -->
   <section class="section-pad" id="prodotti" aria-labelledby="prodotti-heading">
     <div class="container">
-      <div class="text-center fade-in section-intro">
+      <div class="text-center fade-in">
         <span class="section-label">Spedibili in tutta Italia</span>
         <h2 id="prodotti-heading">I Nostri Prodotti</h2>
         <div class="divider"></div>
@@ -109,126 +103,6 @@
     </div>
   </section>
 
-  <!-- ============================================================
-       STORIA
-       ============================================================ -->
-  <section class="section-pad section-alt" id="storia" aria-labelledby="storia-heading">
-    <div class="container">
-      <div class="storia-grid">
-        <div class="storia-text fade-in">
-          <span class="section-label">Le nostre radici</span>
-          <h2 id="storia-heading">Una storia di farina, fuoco e passione</h2>
-          <div class="divider divider-left"></div>
-          <p>
-            Il Panificio Roccafiorita nasce dall'amore per la tradizione siciliana e dalla volontà di preservare sapori autentici che rischiano di andare perduti. Dal <span class="anno">[ANNO]</span><span class="anno-label">Anno di fondazione</span> sforniamo pane e dolci seguendo le ricette di famiglia, senza compromessi sulla qualità.
-          </p>
-          <p style="margin-top: 1rem; color: var(--color-text-muted);">
-            Il nostro forno, acceso ogni mattina all'alba, è il cuore pulsante del laboratorio. Usiamo farine siciliane macinate a pietra, lievito madre e ingredienti che scegliamo personalmente dai produttori locali della nostra provincia.
-          </p>
-          <p style="margin-top: 1rem; color: var(--color-text-muted);">
-            Oggi, grazie alla spedizione refrigerata, possiamo portare i sapori di Roccafiorita su ogni tavola italiana — senza che nulla cambi nel gusto o nella tradizione.
-          </p>
-          <a href="#prodotti" class="btn btn-outline-dark" style="margin-top: 1.5rem;">Scopri i prodotti</a>
-        </div>
-
-        <div class="storia-img fade-in" role="img" aria-label="Il forno del panificio">
-          <!-- TODO: sostituire con immagine reale del forno -->
-          Il forno
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       PRENOTAZIONE
-       ============================================================ -->
-  <section class="section-pad" id="prenota" aria-labelledby="prenota-heading">
-    <div class="container">
-      <div class="text-center fade-in section-intro">
-        <span class="section-label">Ritiro o consegna in paese</span>
-        <h2 id="prenota-heading">Prenota il Pane Fresco</h2>
-        <div class="divider"></div>
-        <p class="prenota-intro">
-          Il pane fresco non si spedisce — puoi ritirarlo direttamente in panificio ancora caldo, oppure richiedere la consegna a domicilio in paese. Compila il modulo e ti ricontattiamo.
-        </p>
-      </div>
-
-      <div class="text-center fade-in" style="margin-bottom: var(--space-md);">
-        <div class="prenota-notice">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          Ritiro in panificio o consegna in paese — Via [INDIRIZZO], [CITTÀ] (SI)
-        </div>
-      </div>
-
-      <div class="form-card fade-in">
-        <!-- Stato successo (nascosto inizialmente) -->
-        <div class="form-success" id="prenota-success" role="alert" aria-live="polite">
-          <div class="form-success-icon" aria-hidden="true">✓</div>
-          <h3>Prenotazione ricevuta!</h3>
-          <p style="margin-top: 0.75rem; color: var(--color-text-muted);">
-            Ti contatteremo al numero fornito per confermare l'orario di ritiro o la consegna. Grazie!
-          </p>
-        </div>
-
-        <!-- Form -->
-        <form id="prenota-form" novalidate aria-label="Modulo prenotazione pane fresco">
-          <!-- Honeypot anti-spam (nascosto agli utenti, visibile ai bot) -->
-          <div class="form-honeypot" aria-hidden="true">
-            <input type="text" name="website" tabindex="-1" autocomplete="off" />
-          </div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="prenota-nome">Nome e Cognome *</label>
-              <input type="text" id="prenota-nome" name="nome" required autocomplete="name"
-                     placeholder="Mario Rossi" aria-describedby="prenota-nome-err" />
-              <span class="form-error" id="prenota-nome-err" role="alert"></span>
-            </div>
-
-            <div class="form-group">
-              <label for="prenota-tel">Telefono *</label>
-              <input type="tel" id="prenota-tel" name="telefono" required autocomplete="tel"
-                     placeholder="+39 000 0000000" aria-describedby="prenota-tel-err" />
-              <span class="form-error" id="prenota-tel-err" role="alert"></span>
-            </div>
-
-            <div class="form-group">
-              <label for="prenota-data">Data di ritiro *</label>
-              <input type="date" id="prenota-data" name="data_ritiro" required
-                     aria-describedby="prenota-data-err" />
-              <span class="form-error" id="prenota-data-err" role="alert"></span>
-            </div>
-
-            <div class="form-group">
-              <label for="prenota-prodotto">Prodotto *</label>
-              <select id="prenota-prodotto" name="prodotto" required
-                      aria-describedby="prenota-prodotto-err">
-                <option value="">— Seleziona —</option>
-                <option value="pane-fresco">Pane Fresco (pagnotta)</option>
-                <option value="pane-semola">Pane di Semola Rimacinata</option>
-                <option value="filone">Filone Integrale</option>
-              </select>
-              <span class="form-error" id="prenota-prodotto-err" role="alert"></span>
-            </div>
-
-            <div class="form-group full">
-              <label for="prenota-note">Note (quantità, varianti, altro)</label>
-              <textarea id="prenota-note" name="note" rows="3"
-                        placeholder="Es: 1 pagnotta da 1kg, senza sesamo..."></textarea>
-              <span class="form-error" id="prenota-note-err" role="alert"></span>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary btn-full" style="margin-top: var(--space-sm);">
-            Invia prenotazione
-          </button>
-        </form>
-      </div>
-    </div>
-  </section>
 
   <!-- ============================================================
        CONTATTI
