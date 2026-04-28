@@ -265,7 +265,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
 }
 
 .navbar.scrolled {
-  background-color: var(--color-espresso);
+  background-color: rgba(107, 58, 34, 0.97);
   box-shadow: var(--shadow-md);
 }
 
@@ -321,6 +321,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 1rem;
+  min-height: 44px;
   border: 1px solid rgba(253, 250, 244, 0.4);
   border-radius: var(--radius-btn);
   color: var(--color-bg);
@@ -371,7 +372,11 @@ p  { font-size: 1rem; color: var(--color-dark); }
   display: none;
   flex-direction: column;
   gap: 5px;
-  padding: 4px;
+  padding: 11px;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
@@ -1597,8 +1602,9 @@ p  { font-size: 1rem; color: var(--color-dark); }
 
   /* ---- Hero ---- */
   .hero {
-    padding: var(--navbar-h) 1.25rem 3rem;
+    padding: calc(var(--navbar-h) + 1.5rem) 1.25rem 3rem;
     text-align: center;
+    align-items: flex-start;
   }
 
   .hero-content {
@@ -1612,12 +1618,12 @@ p  { font-size: 1rem; color: var(--color-dark); }
   }
 
   .hero h1 {
-    margin-bottom: 1.25rem;
+    margin-bottom: 2rem;
   }
 
   .hero-tagline {
     font-size: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
     line-height: 1.65;
   }
 
@@ -1728,7 +1734,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
   }
 
   .hero {
-    padding: var(--navbar-h) 1rem 2.5rem;
+    padding: calc(var(--navbar-h) + 1rem) 1rem 2.5rem;
   }
 
   .hero-eyebrow {
@@ -1828,7 +1834,6 @@ p  { font-size: 1rem; color: var(--color-dark); }
 
   .cart-open .cart-sidebar {
     transform: translateY(0);
-    transform: translateX(0); /* reset lateral transform */
   }
 
   .cart-overlay {
