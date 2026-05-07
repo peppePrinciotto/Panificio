@@ -20,18 +20,11 @@ const CONFIG = {
   },
   products: [
     {
-      id: 'biscotti',
-      name: 'Biscotti Tradizionali',
-      pricePerKg: 14,
-      minKg: 0.5,
-      placeholderColor: '#C4A882',
-      description: 'Biscotti artigianali preparati con ricette tramandate da generazioni, ingredienti selezionati e cottura nel forno a legna.',
-    },
-    {
       id: 'cudduredde',
       name: 'Cudduredde', // ⚠️ Nome dialettale siciliano — NON modificare mai
       pricePerKg: 16,
-      minKg: 0.5,
+      minKg: 1,
+      unit: 'cad.',
       placeholderColor: '#B8956A',
       description: 'Dolci tipici siciliani dalla forma tradizionale, preparati per le festività con amore e ingredienti del territorio.',
     },
@@ -39,7 +32,8 @@ const CONFIG = {
       id: 'pane-duro',
       name: 'Pane Duro',
       pricePerKg: 10,
-      minKg: 0.5,
+      minKg: 1,
+      unit: 'cad.',
       placeholderColor: '#9A7B5C',
       description: 'Pane duro siciliano a lunga conservazione, ideale per accompagnare formaggi e salumi locali o da gustare con olio extravergine.',
     },

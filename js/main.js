@@ -100,8 +100,9 @@
       const stored = localStorage.getItem('roccafiorita_products');
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Mostra solo prodotti disponibili (available !== false)
-        return parsed.filter(p => p.available !== false);
+        return parsed
+          .filter(p => p.available !== false)
+          .map(p => ({ ...p, minKg: Math.max(1, Math.round(p.minKg || 1)) }));
       }
     } catch (_) {}
     return CONFIG.products;
@@ -139,8 +140,8 @@
               <button type="button" class="qty-dec" data-id="${sanitize(product.id)}"
                       aria-label="Riduci quantità">−</button>
               <input type="number" id="qty-${sanitize(product.id)}"
-                     value="${product.minKg}" min="${product.minKg}"
-                     step="${product.minKg}" aria-label="Kg di ${sanitize(product.name)}" />
+                     value="1" min="1" step="1"
+                     aria-label="Quantità di ${sanitize(product.name)}" />
               <button type="button" class="qty-inc" data-id="${sanitize(product.id)}"
                       aria-label="Aumenta quantità">+</button>
             </div>
@@ -148,7 +149,7 @@
 
           <div class="product-footer">
             <div class="product-price-block">
-              <span class="product-price-label">Prezzo al kg</span>
+              <span class="product-price-label">Prezzo ${product.unit || 'cad.'}</span>
               <span class="price">€${product.pricePerKg.toFixed(2)}</span>
             </div>
             <button type="button" class="btn btn-primary btn-add-cart btn-sm"
@@ -162,23 +163,28 @@
       // Decrement
       card.querySelector('.qty-dec').addEventListener('click', function () {
         const input = card.querySelector(`#qty-${product.id}`);
-        const val   = parseFloat(input.value);
-        const next  = parseFloat((val - product.minKg).toFixed(2));
-        if (next >= product.minKg) input.value = next;
+        const val   = parseInt(input.value, 10) || product.minKg;
+        if (val - 1 >= product.minKg) input.value = val - 1;
       });
 
       // Increment
       card.querySelector('.qty-inc').addEventListener('click', function () {
         const input = card.querySelector(`#qty-${product.id}`);
-        const val   = parseFloat(input.value);
-        input.value = parseFloat((val + product.minKg).toFixed(2));
+        const val   = parseInt(input.value, 10) || product.minKg;
+        input.value = val + 1;
+      });
+
+      // Clamp a intero ≥ minKg su input manuale
+      card.querySelector(`#qty-${product.id}`).addEventListener('change', function () {
+        const val = parseInt(this.value, 10);
+        this.value = (isNaN(val) || val < product.minKg) ? product.minKg : val;
       });
 
       // Aggiungi al carrello
       card.querySelector('.btn-add-cart').addEventListener('click', function () {
         const btn   = this;
         const input = card.querySelector(`#qty-${product.id}`);
-        const kg    = parseFloat(input.value);
+        const kg    = parseInt(input.value, 10);
 
         if (isNaN(kg) || kg < product.minKg) return;
 
@@ -203,7 +209,14 @@
     const overlay     = document.getElementById('cart-overlay');
     const checkoutBtn = document.getElementById('checkout-open-btn');
 
-    if (toggleBtn) toggleBtn.addEventListener('click', openCartSidebar);
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', openCartSidebar);
+      // touchstart esplicito: elimina il 300ms delay iOS su dispositivi che ignorano touch-action
+      toggleBtn.addEventListener('touchstart', function (e) {
+        e.preventDefault(); // previene il click successivo (evita doppio fire)
+        openCartSidebar();
+      }, { passive: false });
+    }
     if (closeBtn)  closeBtn.addEventListener('click', closeCartSidebar);
     if (overlay)   overlay.addEventListener('click', closeCartSidebar);
 

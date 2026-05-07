@@ -40,7 +40,7 @@
 
     const rows = items.map(item => `
       <div class="checkout-order-item">
-        <span>${item.name} × ${item.kg} kg</span>
+        <span>${item.name} × ${item.kg} ${item.unit || 'cad.'}</span>
         <span>€${(item.pricePerKg * item.kg).toFixed(2)}</span>
       </div>`).join('');
 
@@ -296,7 +296,7 @@
     const shipping = Cart.getShipping();
 
     const orderLines = items.map(i =>
-      `${i.name}: ${i.kg} kg × €${i.pricePerKg}/kg = €${(i.kg * i.pricePerKg).toFixed(2)}`
+      `${i.name}: ${i.kg} ${i.unit || 'cad.'} × €${i.pricePerKg}/${i.unit || 'cad.'} = €${(i.kg * i.pricePerKg).toFixed(2)}`
     ).join('\n');
 
     const payload = {

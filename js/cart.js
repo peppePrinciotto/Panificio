@@ -34,10 +34,12 @@
   function getProductCatalog() {
     try {
       const stored = localStorage.getItem('roccafiorita_products');
-      return stored ? JSON.parse(stored) : CONFIG.products;
-    } catch (_) {
-      return CONFIG.products;
-    }
+      if (stored) {
+        return JSON.parse(stored)
+          .map(p => ({ ...p, minKg: Math.max(1, Math.round(p.minKg || 1)) }));
+      }
+    } catch (_) {}
+    return CONFIG.products;
   }
 
   // ============================================================
@@ -53,18 +55,18 @@
     const product = catalog.find(p => p.id === productId);
     if (!product) return;
 
-    const qty = parseFloat(kg);
+    const qty = parseInt(kg, 10);
     if (isNaN(qty) || qty < product.minKg) return;
 
     const items = loadItems();
     const existing = items.find(i => i.id === productId);
 
     if (existing) {
-      existing.kg = parseFloat((existing.kg + qty).toFixed(2));
+      existing.kg = Math.round(existing.kg + qty);
     } else {
       items.push({
         id: productId,
-        kg: parseFloat(qty.toFixed(2)),
+        kg: qty,
       });
     }
 
@@ -91,12 +93,12 @@
 
     const catalog = getProductCatalog();
     const product = catalog.find(p => p.id === productId);
-    const minKg = product ? product.minKg : 0.5;
+    const minKg = product ? product.minKg : 1;
 
     const items = loadItems();
     const item = items.find(i => i.id === productId);
     if (item) {
-      item.kg = parseFloat(Math.max(qty, minKg).toFixed(2));
+      item.kg = Math.round(Math.max(qty, minKg));
       saveItems(items);
     }
   }
@@ -120,6 +122,7 @@
         kg: item.kg,
         name: product ? product.name : item.id,
         pricePerKg: product ? product.pricePerKg : 0,
+        unit: product ? (product.unit || 'cad.') : 'cad.',
       };
     });
   }
@@ -194,18 +197,19 @@
 
     // Articoli
     itemsEl.innerHTML = items.map(item => {
-      const lineTotal = (item.pricePerKg * item.kg).toFixed(2);
+      const qty = Math.round(item.kg);
+      const lineTotal = (item.pricePerKg * qty).toFixed(2);
       return `
         <div class="cart-item" data-id="${item.id}">
           <div>
             <div class="cart-item-name">${sanitize(item.name)}</div>
-            <div class="cart-item-sub">€${item.pricePerKg.toFixed(2)}/kg</div>
+            <div class="cart-item-sub">€${item.pricePerKg.toFixed(2)} ${item.unit}</div>
           </div>
           <div class="cart-item-price">€${lineTotal}</div>
           <div class="cart-item-controls">
             <div class="cart-item-qty">
               <button class="cart-qty-minus" data-id="${item.id}" aria-label="Riduci quantità ${sanitize(item.name)}">−</button>
-              <span>${item.kg} kg</span>
+              <span>${qty}</span>
               <button class="cart-qty-plus" data-id="${item.id}" aria-label="Aumenta quantità ${sanitize(item.name)}">+</button>
             </div>
             <button class="cart-item-remove" data-id="${item.id}" aria-label="Rimuovi ${sanitize(item.name)} dal carrello">
@@ -254,8 +258,9 @@
         const item = getItems().find(i => i.id === id);
         const catalog = getProductCatalog();
         const product = catalog.find(p => p.id === id);
-        const step = product ? product.minKg : 0.5;
-        if (item) update(id, item.kg - step);
+        const minKg = product ? product.minKg : 1;
+        const current = Math.round(item ? item.kg : minKg);
+        if (item && current - 1 >= minKg) update(id, current - 1);
       });
     });
 
@@ -265,7 +270,7 @@
         const item = getItems().find(i => i.id === id);
         const catalog = getProductCatalog();
         const product = catalog.find(p => p.id === id);
-        const step = product ? product.minKg : 0.5;
+        const step = product ? product.minKg : 1;
         if (item) update(id, item.kg + step);
       });
     });
