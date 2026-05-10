@@ -29,7 +29,7 @@
   --space-xl:  8rem;
 
   /* Border radius */
-  --radius-card:   4px;
+  --radius-card:   12px;
   --radius-btn:    2px;
 
   /* Ombreggiature calde (mai grigio freddo) */
@@ -551,7 +551,8 @@ p  { font-size: 1rem; color: var(--color-dark); }
   border: 1px solid var(--color-gold-light);
   border-radius: var(--radius-card);
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(60, 35, 20, 0.12), 0 0 0 0 transparent;
+  box-shadow: 0 4px 20px rgba(60, 35, 20, 0.13), 0 1px 4px rgba(60, 35, 20, 0.08);
+  background-color: var(--color-surface);
   transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
   display: flex;
   flex-direction: column;
@@ -559,7 +560,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
 
 .product-card:hover {
   border-color: var(--color-gold);
-  box-shadow: 0 8px 28px rgba(60, 35, 20, 0.22), 0 0 0 2px var(--color-gold-light);
+  box-shadow: 0 8px 32px rgba(60, 35, 20, 0.22), 0 0 0 2px var(--color-gold-light);
   transform: translateY(-3px);
 }
 
@@ -672,6 +673,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
   color: var(--color-dark);
   outline: none;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .qty-input-wrap input::-webkit-inner-spin-button,
