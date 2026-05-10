@@ -26,6 +26,7 @@ const CONFIG = {
       minKg: 1,
       unit: 'cad.',
       placeholderColor: '#B8956A',
+      imageUrl: 'images/cuddureddi.jpg',
       description: 'Dolci tipici siciliani dalla forma tradizionale, preparati per le festività con amore e ingredienti del territorio.',
     },
     {
@@ -35,6 +36,7 @@ const CONFIG = {
       minKg: 1,
       unit: 'cad.',
       placeholderColor: '#9A7B5C',
+      imageUrl: 'images/caserecci.jpg',
       description: 'Pane duro siciliano a lunga conservazione, ideale per accompagnare formaggi e salumi locali o da gustare con olio extravergine.',
     },
   ],
