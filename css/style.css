@@ -1746,7 +1746,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
   .footer-legal-links { justify-content: center; }
 
   .footer-col ul li {
-    margin-bottom: 0.1rem;
+    margin-bottom: 0.1rem !important;
   }
 }
 
