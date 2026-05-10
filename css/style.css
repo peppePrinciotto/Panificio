@@ -147,7 +147,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
 }
 
 #prodotti.section-pad {
-  padding-top: var(--space-lg);
+  padding-top: var(--space-md);
   scroll-margin-top: var(--navbar-h);
 }
 
@@ -159,8 +159,12 @@ p  { font-size: 1rem; color: var(--color-dark); }
 .section-intro {
   position: relative;
   z-index: 2;
-  transform: translateY(-2rem);
-  margin-bottom: -2rem;
+  transform: translateY(-1rem);
+  margin-bottom: -1rem;
+}
+
+#prodotti .text-center > p {
+  white-space: nowrap;
 }
 
 .section-pad-sm {
@@ -309,6 +313,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
   align-items: center;
   justify-content: center;
   gap: var(--space-md);
+  flex: 1;
 }
 
 .navbar-nav a {
@@ -1011,7 +1016,11 @@ p  { font-size: 1rem; color: var(--color-dark); }
   flex-wrap: wrap;
   gap: var(--space-sm);
   font-size: 0.75rem;
-  color: rgba(253, 250, 244, 0.4);
+  color: rgba(253, 250, 244, 0.55);
+}
+
+.footer-bottom p {
+  color: rgba(253, 250, 244, 0.55);
 }
 
 .footer-legal-links {
@@ -1651,6 +1660,8 @@ p  { font-size: 1rem; color: var(--color-dark); }
     padding: 0.9rem 2.6rem;
     font-size: 0.95rem;
   }
+
+  #prodotti .text-center > p { white-space: normal; }
 
   /* ---- Grids ---- */
   .products-grid   { gap: 1rem; }

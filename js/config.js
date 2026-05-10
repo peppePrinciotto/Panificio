@@ -22,7 +22,7 @@ const CONFIG = {
     {
       id: 'cudduredde',
       name: 'Cudduredde', // ⚠️ Nome dialettale siciliano — NON modificare mai
-      pricePerKg: 16,
+      pricePerKg: 3.60,
       minKg: 1,
       unit: 'cad.',
       placeholderColor: '#B8956A',
@@ -31,8 +31,8 @@ const CONFIG = {
     },
     {
       id: 'pane-duro',
-      name: 'Pane Duro',
-      pricePerKg: 10,
+      name: 'Caserecci',
+      pricePerKg: 3.60,
       minKg: 1,
       unit: 'cad.',
       placeholderColor: '#9A7B5C',
