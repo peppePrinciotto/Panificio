@@ -71,7 +71,7 @@
           <h1 id="hero-heading">Panificio <span class="hero-brand-gold">Roccafiorita</span></h1>
         </div>
         <p class="hero-tagline">
-          Tradizione artigianale dal 1970
+          Tradizione artigianale dal <span class="anno">1970</span>
         </p>
       </div>
       <div class="hero-ctas">
@@ -128,9 +128,8 @@
               <circle cx="12" cy="10" r="3"/>
             </svg>
             <div class="info-text">
-              <strong>Indirizzo</strong>
-              Via Pozzo Danile n.12, 13, 14<br />
-              Sant'Angelo di Brolo, 98060 (ME)
+              <strong>Indirizzo</strong><br />
+              <span id="indirizzo-display">Via Pozzo Danile n.12, 13, 14 — Sant'Angelo di Brolo, 98060 (ME)</span>
             </div>
           </div>
 
@@ -139,10 +138,9 @@
               <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.08 1.18 2 2 0 012.07 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
             </svg>
             <div class="info-text">
-              <strong>Telefono</strong>
-              <!-- TODO: sostituire con numero reale -->
-              <a href="tel:+393775790396">+39 3775790396</a><br />
-              <a href="tel:+393279586317">+39 3279586317</a>
+              <strong>Telefono</strong><br />
+              <a href="tel:+393775790396" data-content="telefono">+39 3775790396</a><br />
+              <a href="tel:+393279586317" data-content="telefono2">+39 3279586317</a>
             </div>
           </div>
 
@@ -152,8 +150,8 @@
               <polyline points="22,6 12,13 2,6"/>
             </svg>
             <div class="info-text">
-              <strong>Email</strong>
-              <a href="mailto:info@panificioroccafiorita.it">info@panificioroccafiorita.it</a>
+              <strong>Email</strong><br />
+              <a href="mailto:info@panificioroccafiorita.it" data-content="email">info@panificioroccafiorita.it</a>
             </div>
           </div>
 
@@ -163,10 +161,8 @@
               <polyline points="12 6 12 12 16 14"/>
             </svg>
             <div class="info-text">
-              <strong>Orari</strong>
-              Lun – Sab: 06:00 – 13:30<br />
-              Domenica: 06:00 – 12:00<br />
-              <span style="color: var(--color-text-muted); font-size: 0.85rem;">Chiuso il martedì pomeriggio</span>
+              <strong>Orari</strong><br />
+              <span id="orari-display">Lun – Sab: 06:00 – 13:30<br />Domenica: 06:00 – 12:00</span>
             </div>
           </div>
         </div>
@@ -174,6 +170,7 @@
         <!-- Google Maps -->
         <div class="map-wrap fade-in">
           <iframe
+            id="maps-iframe"
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3139.3022645748806!2d14.883077376032945!3d38.10990179278447!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x131699847d0f95fd%3A0xc4bd9e121b864310!2sVia%20Pozzo%20Danile%2C%2012%2C%2098060%20Sant&#39;Angelo%20di%20Brolo%20ME!5e0!3m2!1sit!2sit!4v1778185992670!5m2!1sit!2sit"
             width="600"
             height="450"
@@ -196,7 +193,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <span class="footer-brand-name">Panificio <span>Roccafiorita</span></span>
-          <a href="https://wa.me/393775790396" target="_blank" rel="noopener noreferrer" class="whatsapp-btn" aria-label="Contattaci su WhatsApp">
+          <a href="https://wa.me/393775790396" id="whatsapp-btn" target="_blank" rel="noopener noreferrer" class="whatsapp-btn" aria-label="Contattaci su WhatsApp">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.554 4.118 1.528 5.855L.057 23.428a.75.75 0 00.916.916l5.573-1.471A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.712 9.712 0 01-4.953-1.355l-.355-.211-3.676.97.984-3.598-.231-.371A9.712 9.712 0 012.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
@@ -220,7 +217,7 @@
             <li><a href="#" data-legal="cookie">Cookie Policy</a></li>
             <li><a href="#" data-legal="termini">Termini e Condizioni</a></li>
             <li>
-              <a href="mailto:info@panificioroccafiorita.it">
+              <a href="mailto:info@panificioroccafiorita.it" data-content="email">
                 info@panificioroccafiorita.it
               </a>
             </li>

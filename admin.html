@@ -154,15 +154,15 @@
               <span class="form-error" id="p-name-err"></span>
             </div>
             <div class="form-group">
-              <label for="p-price">Prezzo al kg (€) *</label>
+              <label for="p-price">Prezzo unitario (€) *</label>
               <input type="number" id="p-price" step="0.50" min="0.50" required />
               <span class="form-error" id="p-price-err"></span>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="p-shortdesc">Descrizione breve * <span class="char-counter"><span id="p-shortdesc-count">0</span>/200</span></label>
-            <textarea id="p-shortdesc" rows="2" maxlength="200" required></textarea>
+            <label for="p-shortdesc">Descrizione breve * <span class="char-counter"><span id="p-shortdesc-count">0</span>/500</span></label>
+            <textarea id="p-shortdesc" rows="3" maxlength="500" required></textarea>
             <span class="form-error" id="p-shortdesc-err"></span>
           </div>
 
@@ -173,20 +173,41 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label for="p-minkg">Quantità minima (kg)</label>
-              <input type="number" id="p-minkg" step="0.5" min="0.5" value="0.5" />
+              <label for="p-minkg">Quantità minima</label>
+              <input type="number" id="p-minkg" step="1" min="1" value="1" />
             </div>
             <div class="form-group">
-              <label for="p-imageurl">URL immagine</label>
-              <input type="text" id="p-imageurl" placeholder="assets/images/prodotto.jpg" />
+              <label for="p-weight">Peso per pezzo (g)</label>
+              <input type="number" id="p-weight" step="1" min="1" placeholder="es. 350" />
             </div>
+          </div>
+
+          <div class="form-group">
+            <label for="p-stock">Unità disponibili in magazzino</label>
+            <input type="number" id="p-stock" step="1" min="0" placeholder="Illimitato" />
+            <span class="form-note" style="font-size:0.78rem;color:var(--color-text-muted);margin-top:0.2rem;display:block;">Lascia vuoto = illimitato · 0 = esaurito</span>
+          </div>
+
+          <div class="form-group">
+            <label>Immagine prodotto</label>
+            <div class="img-upload-area" id="img-upload-area">
+              <img id="p-img-preview" class="img-preview" alt="Anteprima" style="display:none;" />
+              <div class="img-upload-prompt" id="img-upload-prompt">
+                <svg viewBox="0 0 24 24" aria-hidden="true" width="32" height="32"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>Clicca o trascina un'immagine qui</span>
+                <span class="img-upload-hint">JPG, PNG, WebP — max 5 MB</span>
+              </div>
+              <input type="file" id="p-imageupload" accept="image/*" style="display:none;" />
+            </div>
+            <input type="hidden" id="p-imageurl" />
+            <button type="button" class="btn-admin btn-ghost btn-sm img-remove-btn" id="img-remove-btn" style="display:none; margin-top:0.5rem;">✕ Rimuovi immagine</button>
           </div>
 
           <div class="form-group form-toggle-group">
             <label class="toggle-label">
               <input type="checkbox" id="p-available" checked />
               <span class="toggle-track"></span>
-              Prodotto disponibile
+              Prodotto visibile sul sito
             </label>
           </div>
 

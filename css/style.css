@@ -152,7 +152,7 @@ p  { font-size: 1rem; color: var(--color-dark); }
 }
 
 #contatti.section-pad {
-  padding-top: var(--space-lg);
+  padding-top: var(--space-md);
 }
 
 /* Intro block che sovrasta il bordo superiore della sezione */
@@ -596,8 +596,17 @@ p  { font-size: 1rem; color: var(--color-dark); }
   font-size: 0.9rem;
   color: var(--color-text-muted);
   line-height: 1.6;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
   flex: 1;
+}
+
+.product-long-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin-bottom: 1.25rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-cream);
 }
 
 .product-footer {
@@ -679,6 +688,35 @@ p  { font-size: 1rem; color: var(--color-dark); }
 .qty-input-wrap input::-webkit-inner-spin-button,
 .qty-input-wrap input::-webkit-outer-spin-button {
   -webkit-appearance: none;
+}
+
+/* Prodotto esaurito */
+.product-card--esaurito {
+  opacity: 0.65;
+  filter: grayscale(0.3);
+}
+
+.stock-alert {
+  font-size: 0.82rem;
+  color: #A03020;
+  font-weight: 500;
+  margin: 0.35rem 0 0.5rem;
+}
+
+.stock-note {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin: 0.2rem 0 0.5rem;
+}
+
+.product-weight {
+  font-size: 0.78rem;
+  color: var(--color-gold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 0.15rem;
+  margin-bottom: 0.6rem;
+  display: block;
 }
 
 /* Add-to-cart feedback */

@@ -31,10 +31,9 @@
 
   function getDefaults() {
     return {
-      anno:       '',
-      storia:     '',
       indirizzo:  '',
       telefono:   '',
+      telefono2:  '',
       email:      'info@panificioroccafiorita.it',
       mapsLink:   '',
       orari:      DEFAULT_ORARI,
@@ -83,41 +82,26 @@
           <div class="panel-body">
             <div class="form-row">
               <div class="form-group">
-                <label for="c-anno">Anno di fondazione</label>
-                <input type="text" id="c-anno" value="${sanitize(c.anno)}" placeholder="es. 1978" />
+                <label for="c-telefono">Telefono principale</label>
+                <input type="tel" id="c-telefono" value="${sanitize(c.telefono)}" placeholder="+39 377 5790396" />
+                <span class="form-note" style="font-size:0.78rem;color:var(--color-text-muted);margin-top:0.2rem;display:block;">Aggiorna anche il tasto WhatsApp</span>
               </div>
               <div class="form-group">
-                <label for="c-telefono">Telefono</label>
-                <input type="tel" id="c-telefono" value="${sanitize(c.telefono)}" placeholder="+39 000 0000000" />
+                <label for="c-telefono2">Telefono secondario</label>
+                <input type="tel" id="c-telefono2" value="${sanitize(c.telefono2)}" placeholder="+39 327 9586317" />
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="c-indirizzo">Indirizzo completo</label>
-                <input type="text" id="c-indirizzo" value="${sanitize(c.indirizzo)}" placeholder="Via Roma 1, Noto (SR)" />
-              </div>
-              <div class="form-group">
-                <label for="c-email">Email di contatto</label>
-                <input type="email" id="c-email" value="${sanitize(c.email)}" placeholder="info@panificioroccafiorita.it" />
-              </div>
+            <div class="form-group">
+              <label for="c-email">Email di contatto</label>
+              <input type="email" id="c-email" value="${sanitize(c.email)}" placeholder="info@panificioroccafiorita.it" />
+            </div>
+            <div class="form-group">
+              <label for="c-indirizzo">Indirizzo</label>
+              <input type="text" id="c-indirizzo" value="${sanitize(c.indirizzo)}" placeholder="Via Pozzo Danile n.12, 13, 14 — Sant'Angelo di Brolo, 98060 (ME)" />
             </div>
             <div class="form-group">
               <label for="c-maps">Link Google Maps (embed URL)</label>
               <input type="text" id="c-maps" value="${sanitize(c.mapsLink)}" placeholder="https://www.google.com/maps/embed?pb=..." />
-            </div>
-          </div>
-        </div>
-
-        <!-- La nostra storia -->
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">La Nostra Storia</span>
-          </div>
-          <div class="panel-body">
-            <div class="form-group">
-              <label for="c-storia">Testo sezione Storia</label>
-              <textarea id="c-storia" rows="6" placeholder="Racconta la storia del panificio...">${sanitize(c.storia)}</textarea>
-              <span style="font-size:0.775rem; color:var(--color-text-muted);">Lascia vuoto per usare il testo predefinito nell'HTML.</span>
             </div>
           </div>
         </div>
@@ -172,12 +156,11 @@
     });
 
     const content = {
-      anno:      document.getElementById('c-anno').value.trim(),
       telefono:  document.getElementById('c-telefono').value.trim(),
+      telefono2: document.getElementById('c-telefono2').value.trim(),
       indirizzo: document.getElementById('c-indirizzo').value.trim(),
       email:     document.getElementById('c-email').value.trim(),
       mapsLink:  document.getElementById('c-maps').value.trim(),
-      storia:    document.getElementById('c-storia').value.trim(),
       orari:     orari,
     };
 

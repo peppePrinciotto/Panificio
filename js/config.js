@@ -22,6 +22,7 @@ const CONFIG = {
     {
       id: 'cudduredde',
       name: 'Cudduredde', // ⚠️ Nome dialettale siciliano — NON modificare mai
+      weight: '500g',
       pricePerKg: 3.60,
       minKg: 1,
       unit: 'cad.',
@@ -32,6 +33,7 @@ const CONFIG = {
     {
       id: 'pane-duro',
       name: 'Caserecci',
+      weight: '500g',
       pricePerKg: 3.60,
       minKg: 1,
       unit: 'cad.',

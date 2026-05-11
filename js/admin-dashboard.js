@@ -110,8 +110,8 @@
           ${trendOrdini}
         </div>
         <div class="stat-card">
-          <div class="stat-label">Kg venduti</div>
-          <div class="stat-value">${current.kg.toFixed(1)}</div>
+          <div class="stat-label">Unità vendute</div>
+          <div class="stat-value">${current.kg.toFixed(0)}</div>
           ${trendKg}
         </div>
       </div>
@@ -127,7 +127,7 @@
             <thead>
               <tr>
                 <th>Prodotto</th>
-                <th>Kg venduti</th>
+                <th>Unità vendute</th>
                 <th>Incasso</th>
                 <th>Ordini</th>
               </tr>

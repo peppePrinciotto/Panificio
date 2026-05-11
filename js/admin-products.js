@@ -16,18 +16,20 @@
     } catch (_) {}
     // Fallback ai prodotti di CONFIG
     return CONFIG.products.map(p => ({
-      id:                  p.id,
-      name:                p.name,
-      shortDescription:    p.description || '',
-      longDescription:     '',
-      pricePerKg:          p.pricePerKg,
-      minKg:               p.minKg,
-      available:           true,
-      imageUrl:            '',
-      placeholderColor:    p.placeholderColor || '#C4A882',
-      shippingWeightGramsPerKg: 1100,
-      createdAt:           new Date().toISOString(),
-      updatedAt:           new Date().toISOString(),
+      id:               p.id,
+      name:             p.name,
+      shortDescription: p.description || '',
+      longDescription:  '',
+      pricePerKg:       p.pricePerKg,
+      minKg:            Math.max(1, Math.round(p.minKg || 1)),
+      weight:           p.weight || '',
+      weightG:          p.weightG || null,
+      available:        true,
+      stock:            null, // null = illimitato
+      imageUrl:         p.imageUrl || '',
+      placeholderColor: p.placeholderColor || '#C4A882',
+      createdAt:        new Date().toISOString(),
+      updatedAt:        new Date().toISOString(),
     }));
   }
 
@@ -95,9 +97,17 @@
 
   function renderProductCard(p) {
     const availBadge = p.available !== false
-      ? '<span class="badge badge-success">Disponibile</span>'
+      ? '<span class="badge badge-success">Visibile</span>'
       : '<span class="badge badge-muted">Nascosto</span>';
 
+    const stock = p.stock !== null && p.stock !== undefined ? parseInt(p.stock) : null;
+    const stockBadge = stock === null
+      ? ''
+      : stock === 0
+        ? '<span class="badge badge-danger">Esaurito</span>'
+        : `<span class="badge badge-warning">Stock: ${stock}</span>`;
+
+    const weightLabel = p.weightG ? `<span class="badge badge-muted">${p.weightG} g</span>` : '';
     const toggleLabel = p.available !== false ? 'Nascondi' : 'Rendi visibile';
 
     const thumb = p.imageUrl
@@ -111,8 +121,10 @@
           <div class="product-info-name">${sanitize(p.name)}</div>
           <div class="product-info-desc">${sanitize(p.shortDescription || '')}</div>
         </div>
-        <div class="product-info-price">€${parseFloat(p.pricePerKg).toFixed(2)}/kg</div>
+        <div class="product-info-price">€${parseFloat(p.pricePerKg).toFixed(2)}/cad.</div>
+        ${weightLabel}
         ${availBadge}
+        ${stockBadge}
         <div class="product-actions">
           <button class="btn-admin btn-ghost btn-sm edit-product-btn" data-id="${sanitize(p.id)}">Modifica</button>
           <button class="btn-admin btn-ghost btn-sm toggle-available-btn" data-id="${sanitize(p.id)}">${toggleLabel}</button>
@@ -154,15 +166,20 @@
       document.getElementById('p-price').value           = product.pricePerKg || '';
       document.getElementById('p-shortdesc').value       = product.shortDescription || '';
       document.getElementById('p-longdesc').value        = product.longDescription || '';
-      document.getElementById('p-minkg').value           = product.minKg || 0.5;
-      document.getElementById('p-imageurl').value        = product.imageUrl || '';
+      document.getElementById('p-minkg').value           = Math.max(1, Math.round(product.minKg || 1));
+      document.getElementById('p-weight').value          = product.weightG || '';
+      document.getElementById('p-stock').value           = (product.stock !== null && product.stock !== undefined) ? product.stock : '';
       document.getElementById('p-available').checked    = product.available !== false;
+      setImagePreview(product.imageUrl || null);
       if (deleteBtn) deleteBtn.style.display = '';
     } else {
       // Nuovo prodotto
       titleEl.textContent = 'Aggiungi Prodotto';
       document.getElementById('product-id-field').value = '';
+      document.getElementById('p-weight').value          = '';
+      document.getElementById('p-stock').value           = '';
       document.getElementById('p-available').checked    = true;
+      setImagePreview(null);
       if (deleteBtn) deleteBtn.style.display = 'none';
     }
 
@@ -174,6 +191,100 @@
   function closeProductModal() {
     const overlay = document.getElementById('product-modal-overlay');
     if (overlay) overlay.style.display = 'none';
+  }
+
+  // ============================================================
+  // Immagine: anteprima & upload
+  // ============================================================
+  function setImagePreview(dataUrl) {
+    const area    = document.getElementById('img-upload-area');
+    const preview = document.getElementById('p-img-preview');
+    const prompt  = document.getElementById('img-upload-prompt');
+    const removeBtn = document.getElementById('img-remove-btn');
+    const hidden  = document.getElementById('p-imageurl');
+
+    if (dataUrl) {
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      prompt.style.display  = 'none';
+      area.classList.add('has-image');
+      removeBtn.style.display = '';
+      hidden.value = dataUrl;
+    } else {
+      preview.src = '';
+      preview.style.display = 'none';
+      prompt.style.display  = '';
+      area.classList.remove('has-image');
+      removeBtn.style.display = 'none';
+      hidden.value = '';
+    }
+  }
+
+  function resizeAndConvert(file, callback) {
+    const MAX = 800;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onload = function () {
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else        { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        callback(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function initImageUpload() {
+    const area       = document.getElementById('img-upload-area');
+    const fileInput  = document.getElementById('p-imageupload');
+    const removeBtn  = document.getElementById('img-remove-btn');
+
+    if (!area || !fileInput) return;
+
+    area.addEventListener('click', function (e) {
+      if (e.target === removeBtn || removeBtn.contains(e.target)) return;
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function () {
+      const file = fileInput.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Immagine troppo grande. Massimo 5 MB.');
+        return;
+      }
+      resizeAndConvert(file, setImagePreview);
+      fileInput.value = '';
+    });
+
+    area.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      area.classList.add('drag-over');
+    });
+
+    area.addEventListener('dragleave', function () {
+      area.classList.remove('drag-over');
+    });
+
+    area.addEventListener('drop', function (e) {
+      e.preventDefault();
+      area.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      resizeAndConvert(file, setImagePreview);
+    });
+
+    removeBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setImagePreview(null);
+    });
   }
 
   // ============================================================
@@ -206,6 +317,8 @@
           longDescription:  formData.longDescription,
           pricePerKg:       formData.pricePerKg,
           minKg:            formData.minKg,
+          weightG:          formData.weightG,
+          stock:            formData.stock,
           available:        formData.available,
           imageUrl:         formData.imageUrl,
           updatedAt:        now,
@@ -215,18 +328,19 @@
       // Crea nuovo
       const newId = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       products.push({
-        id:                  newId + '-' + Date.now() % 10000,
-        name:                formData.name,
-        shortDescription:    formData.shortDescription,
-        longDescription:     formData.longDescription,
-        pricePerKg:          formData.pricePerKg,
-        minKg:               formData.minKg,
-        available:           formData.available,
-        imageUrl:            formData.imageUrl,
-        placeholderColor:    '#C4A882',
-        shippingWeightGramsPerKg: 1100,
-        createdAt:           now,
-        updatedAt:           now,
+        id:               newId + '-' + Date.now() % 10000,
+        name:             formData.name,
+        shortDescription: formData.shortDescription,
+        longDescription:  formData.longDescription,
+        pricePerKg:       formData.pricePerKg,
+        minKg:            formData.minKg,
+        weightG:          formData.weightG,
+        stock:            formData.stock,
+        available:        formData.available,
+        imageUrl:         formData.imageUrl,
+        placeholderColor: '#C4A882',
+        createdAt:        now,
+        updatedAt:        now,
       });
     }
 
@@ -325,13 +439,16 @@
         e.preventDefault();
         if (!validateProductForm()) return;
 
+        const stockRaw = document.getElementById('p-stock').value.trim();
         saveProduct({
           id:               document.getElementById('product-id-field').value,
           name:             document.getElementById('p-name').value.trim(),
           shortDescription: document.getElementById('p-shortdesc').value.trim(),
           longDescription:  document.getElementById('p-longdesc').value.trim(),
           pricePerKg:       parseFloat(document.getElementById('p-price').value),
-          minKg:            parseFloat(document.getElementById('p-minkg').value) || 0.5,
+          minKg:            parseInt(document.getElementById('p-minkg').value, 10) || 1,
+          weightG:          document.getElementById('p-weight').value.trim() === '' ? null : parseInt(document.getElementById('p-weight').value, 10),
+          stock:            stockRaw === '' ? null : parseInt(stockRaw, 10),
           available:        document.getElementById('p-available').checked,
           imageUrl:         document.getElementById('p-imageurl').value.trim(),
         });
@@ -351,6 +468,7 @@
   // ============================================================
   document.addEventListener('admin:ready', function () {
     initModalEvents();
+    initImageUpload();
   });
 
   document.addEventListener('admin:navigate', function (e) {

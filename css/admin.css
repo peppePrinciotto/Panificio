@@ -166,7 +166,7 @@ input, textarea, select { font-family: var(--font-body); }
 /* Sidebar */
 .admin-sidebar {
   width: var(--sidebar-w);
-  background: var(--color-dark);
+  background: var(--color-espresso);
   color: #F5EFE0;
   flex-shrink: 0;
   display: flex;
@@ -963,4 +963,70 @@ input, textarea, select { font-family: var(--font-body); }
   .product-card-admin {
     flex-wrap: wrap;
   }
+}
+
+/* ============================================================
+   Image Upload Widget
+   ============================================================ */
+.img-upload-area {
+  position: relative;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+  overflow: hidden;
+}
+
+.img-upload-area:hover,
+.img-upload-area.drag-over {
+  border-color: var(--color-gold);
+  background: #fdf8ef;
+}
+
+.img-upload-area.has-image {
+  border-style: solid;
+  border-color: var(--color-border);
+}
+
+.img-upload-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  padding: 1.5rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+.img-upload-prompt svg {
+  stroke: var(--color-gold);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.img-upload-hint {
+  font-size: 0.75rem;
+  color: var(--color-border);
+}
+
+.img-preview {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  display: block;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.img-remove-btn {
+  color: var(--color-danger);
+}
 }

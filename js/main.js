@@ -102,7 +102,11 @@
         const parsed = JSON.parse(stored);
         return parsed
           .filter(p => p.available !== false)
-          .map(p => ({ ...p, minKg: Math.max(1, Math.round(p.minKg || 1)) }));
+          .map(p => ({
+            ...p,
+            minKg:  Math.max(1, Math.round(p.minKg || 1)),
+            weight: p.weight || (p.weightG ? p.weightG + ' g' : ''),
+          }));
       }
     } catch (_) {}
     return CONFIG.products;
@@ -118,34 +122,47 @@
     const products = getProductCatalog();
 
     products.forEach(product => {
+      const stock = (product.stock !== null && product.stock !== undefined)
+        ? parseInt(product.stock, 10)
+        : null;
+      const outOfStock = stock !== null && stock === 0;
+
       const card = document.createElement('article');
-      card.className = 'product-card fade-in';
+      card.className = 'product-card fade-in' + (outOfStock ? ' product-card--esaurito' : '');
       card.setAttribute('aria-label', sanitize(product.name));
 
       const imgContent = product.imageUrl
         ? `<img src="${sanitize(product.imageUrl)}" alt="${sanitize(product.name)}" loading="lazy" />`
-        : `<!-- TODO: sostituire .product-img con immagine reale -->
-           <div class="product-img" style="background-color:${sanitize(product.placeholderColor || '#C4A882')};"
+        : `<div class="product-img" style="background-color:${sanitize(product.placeholderColor || '#C4A882')};"
                 role="img" aria-label="${sanitize(product.name)}">${sanitize(product.name)}</div>`;
+
+      const stockNote = outOfStock
+        ? `<p class="stock-alert">Prodotto esaurito</p>`
+        : '';
 
       card.innerHTML = `
         ${imgContent}
         <div class="product-body">
           <h3 class="product-name">${sanitize(product.name)}</h3>
+          ${product.weight ? `<span class="product-weight">${sanitize(product.weight)}</span>` : ''}
           <p class="product-desc">${sanitize(product.shortDescription || product.description || '')}</p>
+          ${product.longDescription ? `<p class="product-long-desc">${sanitize(product.longDescription)}</p>` : ''}
 
           <div class="qty-selector">
             <label for="qty-${sanitize(product.id)}">Quantità</label>
             <div class="qty-input-wrap">
               <button type="button" class="qty-dec" data-id="${sanitize(product.id)}"
-                      aria-label="Riduci quantità">−</button>
+                      aria-label="Riduci quantità" ${outOfStock ? 'disabled' : ''}>−</button>
               <input type="number" id="qty-${sanitize(product.id)}"
                      value="1" min="1" step="1"
-                     aria-label="Quantità di ${sanitize(product.name)}" />
+                     ${stock !== null && stock > 0 ? `max="${stock}"` : ''}
+                     aria-label="Quantità di ${sanitize(product.name)}"
+                     ${outOfStock ? 'disabled' : ''} />
               <button type="button" class="qty-inc" data-id="${sanitize(product.id)}"
-                      aria-label="Aumenta quantità">+</button>
+                      aria-label="Aumenta quantità" ${outOfStock ? 'disabled' : ''}>+</button>
             </div>
           </div>
+          ${stockNote}
 
           <div class="product-footer">
             <div class="product-price-block">
@@ -154,50 +171,88 @@
             </div>
             <button type="button" class="btn btn-primary btn-add-cart btn-sm"
                     data-id="${sanitize(product.id)}"
-                    aria-label="Aggiungi ${sanitize(product.name)} al carrello">
-              Aggiungi
+                    aria-label="Aggiungi ${sanitize(product.name)} al carrello"
+                    ${outOfStock ? 'disabled' : ''}>
+              ${outOfStock ? 'Esaurito' : 'Aggiungi'}
             </button>
           </div>
         </div>`;
 
-      // Decrement
-      card.querySelector('.qty-dec').addEventListener('click', function () {
-        const input = card.querySelector(`#qty-${product.id}`);
-        const val   = parseInt(input.value, 10) || product.minKg;
-        if (val - 1 >= product.minKg) input.value = val - 1;
-      });
+      if (!outOfStock) {
+        // Decrement
+        card.querySelector('.qty-dec').addEventListener('click', function () {
+          const input = card.querySelector(`#qty-${product.id}`);
+          const val   = parseInt(input.value, 10) || product.minKg;
+          if (val - 1 >= product.minKg) input.value = val - 1;
+        });
 
-      // Increment
-      card.querySelector('.qty-inc').addEventListener('click', function () {
-        const input = card.querySelector(`#qty-${product.id}`);
-        const val   = parseInt(input.value, 10) || product.minKg;
-        input.value = val + 1;
-      });
+        // Increment
+        card.querySelector('.qty-inc').addEventListener('click', function () {
+          const input = card.querySelector(`#qty-${product.id}`);
+          const val   = parseInt(input.value, 10) || product.minKg;
+          const max   = stock !== null ? stock : Infinity;
+          if (val + 1 <= max) {
+            input.value = val + 1;
+          } else {
+            showInlineStockMsg(card, stock);
+          }
+        });
 
-      // Clamp a intero ≥ minKg su input manuale
-      card.querySelector(`#qty-${product.id}`).addEventListener('change', function () {
-        const val = parseInt(this.value, 10);
-        this.value = (isNaN(val) || val < product.minKg) ? product.minKg : val;
-      });
+        // Clamp su input manuale
+        card.querySelector(`#qty-${product.id}`).addEventListener('change', function () {
+          const val = parseInt(this.value, 10);
+          const min = product.minKg;
+          const max = stock !== null ? stock : Infinity;
+          if (isNaN(val) || val < min) { this.value = min; return; }
+          if (val > max) {
+            this.value = max;
+            showInlineStockMsg(card, stock);
+          }
+        });
 
-      // Aggiungi al carrello
-      card.querySelector('.btn-add-cart').addEventListener('click', function () {
-        const btn   = this;
-        const input = card.querySelector(`#qty-${product.id}`);
-        const kg    = parseInt(input.value, 10);
+        // Aggiungi al carrello
+        card.querySelector('.btn-add-cart').addEventListener('click', function () {
+          const btn   = this;
+          const input = card.querySelector(`#qty-${product.id}`);
+          const qty   = parseInt(input.value, 10);
 
-        if (isNaN(kg) || kg < product.minKg) return;
+          if (isNaN(qty) || qty < product.minKg) return;
 
-        Cart.add(product.id, kg);
-        openCartSidebar();
+          if (stock !== null && qty > stock) {
+            input.value = stock;
+            showInlineStockMsg(card, stock);
+            return;
+          }
 
-        // Feedback visivo 500ms
-        btn.classList.add('adding');
-        setTimeout(() => btn.classList.remove('adding'), 500);
-      });
+          Cart.add(product.id, qty);
+          openCartSidebar();
+
+          btn.classList.add('adding');
+          setTimeout(() => btn.classList.remove('adding'), 500);
+        });
+      }
 
       grid.appendChild(card);
     });
+
+    // Live update: se l'admin (in altro tab) modifica i prodotti, ri-renderizza
+    window.addEventListener('storage', function (e) {
+      if (e.key === 'roccafiorita_products') {
+        grid.innerHTML = '';
+        initProductCards();
+      }
+    });
+  }
+
+  function showInlineStockMsg(card, stock) {
+    if (card.querySelector('.stock-inline-msg')) return;
+    const msg = document.createElement('p');
+    msg.className = 'stock-inline-msg';
+    msg.textContent = `Disponibili solo ${stock} unità`;
+    msg.style.cssText = `font-family:'Lora',Georgia,serif;font-size:0.82rem;color:#A07830;font-style:italic;margin-top:0.4rem;`;
+    const footer = card.querySelector('.product-footer');
+    if (footer) footer.insertAdjacentElement('afterend', msg);
+    setTimeout(() => msg.remove(), 3000);
   }
 
   // ============================================================
@@ -565,34 +620,52 @@
     try {
       const stored = localStorage.getItem('roccafiorita_content');
       if (!stored) return;
-      const content = JSON.parse(stored);
+      const c = JSON.parse(stored);
 
-      // Anno fondazione
-      if (content.anno) {
-        document.querySelectorAll('.anno').forEach(el => {
-          el.textContent = sanitize(content.anno);
-        });
+      if (c.anno) {
+        document.querySelectorAll('.anno').forEach(el => { el.textContent = c.anno; });
       }
 
-      // Indirizzo
-      if (content.indirizzo) {
-        document.querySelectorAll('[data-content="indirizzo"]').forEach(el => {
-          el.textContent = sanitize(content.indirizzo);
-        });
+      if (c.indirizzo) {
+        const el = document.getElementById('indirizzo-display');
+        if (el) el.textContent = c.indirizzo;
       }
 
-      // Telefono
-      if (content.telefono) {
+      if (c.telefono) {
         document.querySelectorAll('[data-content="telefono"]').forEach(el => {
-          el.textContent = sanitize(content.telefono);
-          if (el.tagName === 'A') el.href = 'tel:' + content.telefono.replace(/\s/g, '');
+          el.textContent = c.telefono;
+          if (el.tagName === 'A') el.href = 'tel:' + c.telefono.replace(/\s/g, '');
+        });
+        const wa = document.getElementById('whatsapp-btn');
+        if (wa) wa.href = 'https://wa.me/' + c.telefono.replace(/[^0-9]/g, '');
+      }
+
+      if (c.telefono2) {
+        document.querySelectorAll('[data-content="telefono2"]').forEach(el => {
+          el.textContent = c.telefono2;
+          if (el.tagName === 'A') el.href = 'tel:' + c.telefono2.replace(/\s/g, '');
         });
       }
 
-      // Storia
-      if (content.storia) {
-        const storiaEl = document.getElementById('storia-testo');
-        if (storiaEl) storiaEl.textContent = content.storia;
+      if (c.email) {
+        document.querySelectorAll('[data-content="email"]').forEach(el => {
+          el.textContent = c.email;
+          if (el.tagName === 'A') el.href = 'mailto:' + c.email;
+        });
+      }
+
+      if (c.mapsLink) {
+        const iframe = document.getElementById('maps-iframe');
+        if (iframe) iframe.src = c.mapsLink;
+      }
+
+      if (c.orari && c.orari.length) {
+        const el = document.getElementById('orari-display');
+        if (el) {
+          el.innerHTML = c.orari
+            .map(r => `${sanitize(r.giorno)}: ${sanitize(r.orario)}`)
+            .join('<br />');
+        }
       }
 
     } catch (_) {}
