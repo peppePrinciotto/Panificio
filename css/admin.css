@@ -492,7 +492,7 @@ input, textarea, select { font-family: var(--font-body); }
   text-align: center;
 }
 
-.product-info { flex: 1; min-width: 0; }
+.product-info { flex: 1; min-width: 0; max-width: 300px; }
 
 .product-info-name {
   font-weight: 600;
@@ -513,13 +513,15 @@ input, textarea, select { font-family: var(--font-body); }
   font-size: 0.9rem;
   color: var(--color-gold);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .product-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* Badge disponibilità */
@@ -920,7 +922,19 @@ input, textarea, select { font-family: var(--font-body); }
 }
 
 /* ============================================================
-   16. Responsive Admin
+   16. Sidebar backdrop (mobile)
+   ============================================================ */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 16, 9, 0.45);
+  z-index: 99;
+}
+.sidebar-backdrop.active { display: block; }
+
+/* ============================================================
+   17. Responsive Admin
    ============================================================ */
 @media (max-width: 900px) {
   .stats-grid {
@@ -931,9 +945,11 @@ input, textarea, select { font-family: var(--font-body); }
 @media (max-width: 768px) {
   :root { --sidebar-w: 0px; }
 
+  /* Sidebar: entra da sinistra */
   .admin-sidebar {
     transform: translateX(-240px);
     width: 240px;
+    z-index: 100;
   }
 
   .admin-sidebar.open {
@@ -942,26 +958,142 @@ input, textarea, select { font-family: var(--font-body); }
 
   .admin-main {
     margin-left: 0;
+    width: 100%;
+    overflow-x: hidden;
   }
 
   .sidebar-toggle-btn {
     display: flex;
   }
 
+  /* Topbar */
+  .admin-topbar {
+    padding: 0 1rem;
+    gap: 0.5rem;
+  }
+
+  .topbar-title {
+    font-size: 1rem;
+    flex: 1;
+    text-align: center;
+  }
+
+  .topbar-user {
+    display: none;
+  }
+
+  /* Sezioni */
+  .admin-section {
+    padding: 1rem 0.875rem;
+  }
+
+  /* Stats */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+  }
+
+  /* Form */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 16px; /* evita zoom iOS su focus */
+  }
+
+  /* Modal prodotto: full-screen su mobile */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-box {
+    max-width: 100%;
+    width: 100%;
+    max-height: 94vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  /* Product list: card verticale */
+  .product-card-admin {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .product-info {
+    max-width: none;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .product-info-price,
+  .product-actions {
+    flex-shrink: 0;
+  }
+
+  /* Bottoni azioni full-width su mobile */
+  .product-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+  }
+
+  /* Tabella prenotazioni */
+  .reservations-table {
+    font-size: 0.8rem;
+  }
+
+  .reservations-table th,
+  .reservations-table td {
+    padding: 0.5rem 0.6rem;
+  }
+
+  /* Orari admin */
+  .orari-table {
+    font-size: 0.85rem;
+  }
+
+  .orari-table input {
+    width: 100%;
+  }
+
+  /* Bottoni admin */
+  .btn-admin {
+    min-height: 40px;
+  }
+
+  /* Panel */
+  .panel-body {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
 
-  .admin-section {
-    padding: 1.25rem 1rem;
+  .product-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
 
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .product-card-admin {
-    flex-wrap: wrap;
+  .product-list-header .btn-admin {
+    width: 100%;
+    justify-content: center;
   }
 }
 

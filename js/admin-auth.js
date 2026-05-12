@@ -290,22 +290,37 @@
   // Toggle sidebar su mobile
   // ============================================================
   function setupSidebarToggle() {
-    const btn     = document.getElementById('sidebar-toggle-btn');
-    const sidebar = document.getElementById('admin-sidebar');
+    const btn      = document.getElementById('sidebar-toggle-btn');
+    const sidebar  = document.getElementById('admin-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
     if (!btn || !sidebar) return;
 
+    function openSidebar() {
+      sidebar.classList.add('open');
+      if (backdrop) backdrop.classList.add('active');
+    }
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+
     btn.addEventListener('click', function () {
-      sidebar.classList.toggle('open');
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
     });
 
-    // Chiudi cliccando fuori su mobile
-    document.addEventListener('click', function (e) {
-      if (window.innerWidth < 768 &&
-          sidebar.classList.contains('open') &&
-          !sidebar.contains(e.target) &&
-          e.target !== btn) {
-        sidebar.classList.remove('open');
-      }
+    if (backdrop) backdrop.addEventListener('click', closeSidebar);
+
+    // Chiudi con ESC
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeSidebar();
+    });
+
+    // Chiudi al click su un link della sidebar su mobile
+    sidebar.querySelectorAll('.sidebar-link').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (window.innerWidth < 768) closeSidebar();
+      });
     });
   }
 
