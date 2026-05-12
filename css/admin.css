@@ -492,7 +492,7 @@ input, textarea, select { font-family: var(--font-body); }
   text-align: center;
 }
 
-.product-info { flex: 1; min-width: 0; max-width: 300px; }
+.product-info { flex: 1; min-width: 0; max-width: 300px; margin-right: auto; }
 
 .product-info-name {
   font-weight: 600;
@@ -521,7 +521,6 @@ input, textarea, select { font-family: var(--font-body); }
   align-items: center;
   gap: 0.5rem;
   flex-shrink: 0;
-  margin-left: auto;
 }
 
 /* Badge disponibilità */

@@ -124,9 +124,6 @@
     // Altrimenti mostra login
     showLogin();
     setupLoginForm();
-    setupLogout();
-    setupSidebarNav();
-    setupSidebarToggle();
   });
 
   function showAdmin() {
