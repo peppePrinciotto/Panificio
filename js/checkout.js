@@ -34,13 +34,7 @@
       return;
     }
 
-    const key = CONFIG.stripe.publishableKey;
-    if (!key || key.includes('XXXX')) {
-      console.warn('[Checkout] Stripe publishableKey non configurata in config.js');
-      return;
-    }
-
-    stripe = Stripe(key);
+    stripe = Stripe(CONFIG.stripe.publishableKey);
 
     const elements = stripe.elements({
       fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Lora&display=swap' }],
