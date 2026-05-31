@@ -31,7 +31,11 @@
   // ============================================================
   function initStripe() {
     if (typeof Stripe === 'undefined') {
-      console.warn('[Checkout] Stripe.js non caricato — assicurati che lo script sia incluso nell\'HTML');
+      console.warn('[Checkout] Stripe.js non caricato');
+      return;
+    }
+    if (!CONFIG.stripe.publishableKey) {
+      console.warn('[Checkout] publishableKey mancante in config.js');
       return;
     }
 
