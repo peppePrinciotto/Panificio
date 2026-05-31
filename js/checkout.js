@@ -9,12 +9,13 @@
 (function () {
   'use strict';
 
-  let stripe       = null;
-  let cardElement  = null;
-  let clientSecret = null;
-  let serverTotal  = null;
+  let stripe         = null;
+  let cardElement    = null;
+  let cardMounted    = false;
+  let clientSecret   = null;
+  let serverTotal    = null;
   let serverShipping = null;
-  let step         = 'shipping'; // 'shipping' | 'payment' | 'done'
+  let step           = 'shipping'; // 'shipping' | 'payment' | 'done'
 
   // ============================================================
   // Inizializzazione
@@ -68,8 +69,8 @@
       },
     });
 
-    cardElement.mount('#stripe-card-element');
-
+    // NON montare qui: il container è display:none e Stripe non si inizializza.
+    // Il mount avviene in showPaymentStep() dopo che il container è visibile.
     cardElement.addEventListener('change', function (e) {
       const errEl = document.getElementById('stripe-card-errors');
       if (errEl) errEl.textContent = e.error ? e.error.message : '';
@@ -135,9 +136,16 @@
   function showPaymentStep() {
     step = 'payment';
     const cardWrap = document.getElementById('stripe-card-wrap');
-    const payBtn   = document.getElementById('stripe-pay-btn');
     if (cardWrap) cardWrap.style.display = '';
-    if (payBtn)   {
+
+    // Monta il card element solo ora che il container è visibile
+    if (cardElement && !cardMounted) {
+      cardElement.mount('#stripe-card-element');
+      cardMounted = true;
+    }
+
+    const payBtn = document.getElementById('stripe-pay-btn');
+    if (payBtn) {
       payBtn.disabled    = false;
       payBtn.textContent = serverTotal ? `Paga €${serverTotal.toFixed(2)}` : 'Paga ora';
     }
@@ -152,6 +160,7 @@
       clientSecret   = null;
       serverTotal    = null;
       serverShipping = null;
+      cardMounted    = false;
       showShippingStep();
       renderCheckoutSummary();
     });
