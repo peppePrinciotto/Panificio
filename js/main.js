@@ -93,33 +93,88 @@
   }
 
   // ============================================================
-  // Prodotti — legge da localStorage (admin) con fallback a CONFIG
+  // Prodotti — legge da Supabase (anon key) con fallback a CONFIG
   // ============================================================
-  function getProductCatalog() {
-    try {
-      const stored = localStorage.getItem('roccafiorita_products');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed
-          .filter(p => p.available !== false)
-          .map(p => ({
-            ...p,
-            minKg:  Math.max(1, Math.round(p.minKg || 1)),
-            weight: p.weight || (p.weightG ? p.weightG + ' g' : ''),
-          }));
-      }
-    } catch (_) {}
-    return CONFIG.products;
+  function fetchProductsFromSupabase() {
+    const url = CONFIG.supabase.url + '/rest/v1/products?select=*&available=eq.true&order=created_at.asc';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    return fetch(url, {
+      headers: {
+        'apikey':        CONFIG.supabase.anonKey,
+        'Authorization': 'Bearer ' + CONFIG.supabase.anonKey,
+      },
+      signal: controller.signal,
+    })
+      .then(function (res) {
+        clearTimeout(timeout);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (rows) {
+        return rows.map(function (r) {
+          return {
+            id:          r.id,
+            name:        r.name,
+            description: r.description || '',
+            price:       r.price,
+            weightG:     r.weight_g,
+            stock:       r.stock,
+            available:   r.available !== false,
+            imageUrl:    r.image_url || '',
+          };
+        });
+      })
+      .catch(function (err) {
+        clearTimeout(timeout);
+        console.warn('[Prodotti] Supabase non raggiungibile, uso fallback CONFIG:', err.message);
+        return null;
+      });
   }
 
   // ============================================================
-  // Card prodotti — generate dai prodotti correnti
+  // Skeleton loader — tre card placeholder durante il caricamento
+  // ============================================================
+  function renderSkeletonCards(grid) {
+    grid.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const sk = document.createElement('article');
+      sk.className = 'product-card product-card--skeleton';
+      sk.setAttribute('aria-hidden', 'true');
+      sk.innerHTML = `
+        <div class="skeleton-img"></div>
+        <div class="product-body">
+          <div class="skeleton-line skeleton-line--title"></div>
+          <div class="skeleton-line skeleton-line--short"></div>
+          <div class="skeleton-line skeleton-line--desc"></div>
+          <div class="skeleton-line skeleton-line--desc"></div>
+          <div class="skeleton-btn"></div>
+        </div>`;
+      grid.appendChild(sk);
+    }
+  }
+
+  // ============================================================
+  // Card prodotti — generate dai prodotti caricati da Supabase
   // ============================================================
   function initProductCards() {
     const grid = document.getElementById('products-grid');
     if (!grid) return;
 
-    const products = getProductCatalog();
+    renderSkeletonCards(grid);
+
+    fetchProductsFromSupabase().then(function (supabaseProducts) {
+      const products = supabaseProducts && supabaseProducts.length > 0
+        ? supabaseProducts
+        : CONFIG.products;
+
+      grid.innerHTML = '';
+      renderProductCards(grid, products);
+    });
+  }
+
+  function renderProductCards(grid, products) {
 
     products.forEach(product => {
       const stock = (product.stock !== null && product.stock !== undefined)
@@ -133,7 +188,7 @@
 
       const imgContent = product.imageUrl
         ? `<img src="${sanitize(product.imageUrl)}" alt="${sanitize(product.name)}" loading="lazy" />`
-        : `<div class="product-img" style="background-color:${sanitize(product.placeholderColor || '#C4A882')};"
+        : `<div class="product-img" style="background-color:#C4A882;"
                 role="img" aria-label="${sanitize(product.name)}">${sanitize(product.name)}</div>`;
 
       const stockNote = outOfStock
@@ -144,9 +199,8 @@
         ${imgContent}
         <div class="product-body">
           <h3 class="product-name">${sanitize(product.name)}</h3>
-          ${product.weight ? `<span class="product-weight">${sanitize(product.weight)}</span>` : ''}
-          <p class="product-desc">${sanitize(product.shortDescription || product.description || '')}</p>
-          ${product.longDescription ? `<p class="product-long-desc">${sanitize(product.longDescription)}</p>` : ''}
+          ${product.weightG ? `<span class="product-weight">Confezione da ${sanitize(String(product.weightG))}g</span>` : ''}
+          <p class="product-desc">${sanitize(product.description || '')}</p>
 
           <div class="qty-selector">
             <label for="qty-${sanitize(product.id)}">Quantità</label>
@@ -154,8 +208,7 @@
               <button type="button" class="qty-dec" data-id="${sanitize(product.id)}"
                       aria-label="Riduci quantità" ${outOfStock ? 'disabled' : ''}>−</button>
               <input type="number" id="qty-${sanitize(product.id)}"
-                     value="1" min="1" step="1"
-                     ${stock !== null && stock > 0 ? `max="${stock}"` : ''}
+                     value="1" min="1" max="99" step="1"
                      aria-label="Quantità di ${sanitize(product.name)}"
                      ${outOfStock ? 'disabled' : ''} />
               <button type="button" class="qty-inc" data-id="${sanitize(product.id)}"
@@ -166,8 +219,8 @@
 
           <div class="product-footer">
             <div class="product-price-block">
-              <span class="product-price-label">Prezzo ${product.unit || 'cad.'}</span>
-              <span class="price">€${product.pricePerKg.toFixed(2)}</span>
+              <span class="product-price-label">Prezzo / confezione</span>
+              <span class="price">€${parseFloat(product.price).toFixed(2)}</span>
             </div>
             <button type="button" class="btn btn-primary btn-add-cart btn-sm"
                     data-id="${sanitize(product.id)}"
@@ -182,31 +235,30 @@
         // Decrement
         card.querySelector('.qty-dec').addEventListener('click', function () {
           const input = card.querySelector(`#qty-${product.id}`);
-          const val   = parseInt(input.value, 10) || product.minKg;
-          if (val - 1 >= product.minKg) input.value = val - 1;
+          const val   = parseInt(input.value, 10) || 1;
+          if (val - 1 >= 1) input.value = val - 1;
         });
 
         // Increment
         card.querySelector('.qty-inc').addEventListener('click', function () {
           const input = card.querySelector(`#qty-${product.id}`);
-          const val   = parseInt(input.value, 10) || product.minKg;
-          const max   = stock !== null ? stock : Infinity;
+          const val   = parseInt(input.value, 10) || 1;
+          const max   = stock !== null ? Math.min(stock, 99) : 99;
           if (val + 1 <= max) {
             input.value = val + 1;
           } else {
-            showInlineStockMsg(card, stock);
+            showInlineStockMsg(card, stock !== null ? stock : 99);
           }
         });
 
         // Clamp su input manuale
         card.querySelector(`#qty-${product.id}`).addEventListener('change', function () {
           const val = parseInt(this.value, 10);
-          const min = product.minKg;
-          const max = stock !== null ? stock : Infinity;
-          if (isNaN(val) || val < min) { this.value = min; return; }
+          const max = stock !== null ? Math.min(stock, 99) : 99;
+          if (isNaN(val) || val < 1) { this.value = 1; return; }
           if (val > max) {
             this.value = max;
-            showInlineStockMsg(card, stock);
+            showInlineStockMsg(card, stock !== null ? stock : 99);
           }
         });
 
@@ -216,7 +268,7 @@
           const input = card.querySelector(`#qty-${product.id}`);
           const qty   = parseInt(input.value, 10);
 
-          if (isNaN(qty) || qty < product.minKg) return;
+          if (isNaN(qty) || qty < 1) return;
 
           if (stock !== null && qty > stock) {
             input.value = stock;
@@ -235,13 +287,8 @@
       grid.appendChild(card);
     });
 
-    // Live update: se l'admin (in altro tab) modifica i prodotti, ri-renderizza
-    window.addEventListener('storage', function (e) {
-      if (e.key === 'roccafiorita_products') {
-        grid.innerHTML = '';
-        initProductCards();
-      }
-    });
+    // Avvia animazioni scroll sulle nuove card
+    initScrollAnimations();
   }
 
   function showInlineStockMsg(card, stock) {

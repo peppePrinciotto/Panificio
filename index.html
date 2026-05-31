@@ -344,20 +344,16 @@
             </div>
           </div>
 
-          <!-- Pagamento con carta (Stripe Elements) -->
-          <p class="checkout-section-title">Paga con carta</p>
-          <div id="stripe-card-element" aria-label="Inserisci i dati della carta"></div>
-          <div id="stripe-card-errors" role="alert" aria-live="polite"></div>
+          <!-- Pagamento con carta (Stripe Elements) — visibile solo nello step 2 -->
+          <div id="stripe-card-wrap" style="display:none;">
+            <p class="checkout-section-title">Paga con carta</p>
+            <div id="stripe-card-element" aria-label="Inserisci i dati della carta"></div>
+            <div id="stripe-card-errors" role="alert" aria-live="polite"></div>
+          </div>
 
           <button class="btn btn-primary btn-full" id="stripe-pay-btn" style="margin-top: 1.25rem;">
-            Paga ora
+            Procedi al pagamento
           </button>
-
-          <!-- Divider -->
-          <div class="payment-divider">oppure</div>
-
-          <!-- PayPal -->
-          <div id="paypal-button-container" aria-label="Paga con PayPal"></div>
         </div>
       </div>
     </div>

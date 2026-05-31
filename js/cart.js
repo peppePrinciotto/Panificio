@@ -1,6 +1,6 @@
 // cart.js — Gestione carrello con persistenza localStorage
 // Espone window.Cart e dispatcha CustomEvent 'cart:updated' ad ogni modifica
-// SICUREZZA: il carrello salva solo {id, kg} — i prezzi vengono sempre riletti da CONFIG
+// SICUREZZA: il carrello salva solo {id, quantity} — i prezzi vengono sempre riletti da CONFIG
 
 (function () {
   'use strict';
@@ -34,10 +34,7 @@
   function getProductCatalog() {
     try {
       const stored = localStorage.getItem('roccafiorita_products');
-      if (stored) {
-        return JSON.parse(stored)
-          .map(p => ({ ...p, minKg: Math.max(1, Math.round(p.minKg || 1)) }));
-      }
+      if (stored) return JSON.parse(stored);
     } catch (_) {}
     return CONFIG.products;
   }
@@ -48,26 +45,23 @@
 
   /**
    * Aggiunge o incrementa un prodotto nel carrello.
-   * Salva solo {id, kg} — MAI il prezzo.
+   * Salva solo {id, quantity} — MAI il prezzo.
    */
-  function add(productId, kg) {
+  function add(productId, quantity) {
     const catalog = getProductCatalog();
     const product = catalog.find(p => p.id === productId);
     if (!product) return;
 
-    const qty = parseInt(kg, 10);
-    if (isNaN(qty) || qty < product.minKg) return;
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty < 1) return;
 
     const items = loadItems();
     const existing = items.find(i => i.id === productId);
 
     if (existing) {
-      existing.kg = Math.round(existing.kg + qty);
+      existing.quantity = Math.min(existing.quantity + qty, 99);
     } else {
-      items.push({
-        id: productId,
-        kg: qty,
-      });
+      items.push({ id: productId, quantity: qty });
     }
 
     saveItems(items);
@@ -82,23 +76,19 @@
   }
 
   /**
-   * Imposta la quantità (kg) di un prodotto. Se kg <= 0 rimuove.
+   * Imposta la quantità di un prodotto. Se quantity <= 0 rimuove.
    */
-  function update(productId, kg) {
-    const qty = parseFloat(kg);
+  function update(productId, quantity) {
+    const qty = parseInt(quantity, 10);
     if (isNaN(qty) || qty <= 0) {
       remove(productId);
       return;
     }
 
-    const catalog = getProductCatalog();
-    const product = catalog.find(p => p.id === productId);
-    const minKg = product ? product.minKg : 1;
-
     const items = loadItems();
     const item = items.find(i => i.id === productId);
     if (item) {
-      item.kg = Math.round(Math.max(qty, minKg));
+      item.quantity = Math.min(Math.max(qty, 1), 99);
       saveItems(items);
     }
   }
@@ -111,27 +101,31 @@
   }
 
   /**
-   * Restituisce gli articoli arricchiti con nome e prezzo da CONFIG (fonte di verità).
+   * Restituisce gli articoli arricchiti con nome, peso e prezzo dal catalogo.
+   * Formato: { id, name, quantity, weight_g, price, subtotal }
    */
   function getItems() {
     const catalog = getProductCatalog();
     return loadItems().map(item => {
       const product = catalog.find(p => p.id === item.id);
+      const price   = product ? parseFloat(product.price || product.pricePerKg || 0) : 0;
+      const qty     = item.quantity || 0;
       return {
-        id: item.id,
-        kg: item.kg,
-        name: product ? product.name : item.id,
-        pricePerKg: product ? product.pricePerKg : 0,
-        unit: product ? (product.unit || 'cad.') : 'cad.',
+        id:       item.id,
+        name:     product ? product.name : item.id,
+        quantity: qty,
+        weight_g: product ? (product.weight_g || product.weightG || null) : null,
+        price:    price,
+        subtotal: parseFloat((qty * price).toFixed(2)),
       };
     });
   }
 
   /**
-   * Calcola subtotale (senza spedizione) — prezzi sempre da CONFIG.
+   * Calcola subtotale (senza spedizione).
    */
   function getSubtotal() {
-    return getItems().reduce((sum, i) => sum + i.pricePerKg * i.kg, 0);
+    return getItems().reduce((sum, i) => sum + i.subtotal, 0);
   }
 
   /**
@@ -197,19 +191,17 @@
 
     // Articoli
     itemsEl.innerHTML = items.map(item => {
-      const qty = Math.round(item.kg);
-      const lineTotal = (item.pricePerKg * qty).toFixed(2);
       return `
         <div class="cart-item" data-id="${item.id}">
           <div>
             <div class="cart-item-name">${sanitize(item.name)}</div>
-            <div class="cart-item-sub">€${item.pricePerKg.toFixed(2)} ${item.unit}</div>
+            <div class="cart-item-sub">€${item.price.toFixed(2)} / confezione</div>
           </div>
-          <div class="cart-item-price">€${lineTotal}</div>
+          <div class="cart-item-price">€${item.subtotal.toFixed(2)}</div>
           <div class="cart-item-controls">
             <div class="cart-item-qty">
               <button class="cart-qty-minus" data-id="${item.id}" aria-label="Riduci quantità ${sanitize(item.name)}">−</button>
-              <span>${qty}</span>
+              <span>${item.quantity}</span>
               <button class="cart-qty-plus" data-id="${item.id}" aria-label="Aumenta quantità ${sanitize(item.name)}">+</button>
             </div>
             <button class="cart-item-remove" data-id="${item.id}" aria-label="Rimuovi ${sanitize(item.name)} dal carrello">
@@ -254,24 +246,17 @@
     // Event delegation per +/−/rimuovi nella sidebar
     itemsEl.querySelectorAll('.cart-qty-minus').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
+        const id   = btn.dataset.id;
         const item = getItems().find(i => i.id === id);
-        const catalog = getProductCatalog();
-        const product = catalog.find(p => p.id === id);
-        const minKg = product ? product.minKg : 1;
-        const current = Math.round(item ? item.kg : minKg);
-        if (item && current - 1 >= minKg) update(id, current - 1);
+        if (item && item.quantity - 1 >= 1) update(id, item.quantity - 1);
       });
     });
 
     itemsEl.querySelectorAll('.cart-qty-plus').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
+        const id   = btn.dataset.id;
         const item = getItems().find(i => i.id === id);
-        const catalog = getProductCatalog();
-        const product = catalog.find(p => p.id === id);
-        const step = product ? product.minKg : 1;
-        if (item) update(id, item.kg + step);
+        if (item) update(id, item.quantity + 1);
       });
     });
 

@@ -1161,3 +1161,77 @@ input, textarea, select { font-family: var(--font-body); }
   color: var(--color-danger);
 }
 }
+
+/* ============================================================
+   Badge ordini da spedire (sidebar)
+   ============================================================ */
+.orders-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.3rem;
+  margin-left: auto;
+  background: #c0392b;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+/* ============================================================
+   Ordini — righe articoli nella card ordine
+   ============================================================ */
+.order-item-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.order-item-row:last-child {
+  border-bottom: none;
+}
+
+.order-item-name {
+  flex: 1;
+  font-family: var(--font-display);
+  color: var(--color-espresso);
+}
+
+.order-item-qty {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.order-item-price {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Highlight nuovi ordini rilevati dal polling */
+@keyframes order-new-flash {
+  0%   { background: #fff8e1; }
+  50%  { background: #ffe082; }
+  100% { background: transparent; }
+}
+
+.order-card--new {
+  animation: order-new-flash 1.5s ease-out forwards;
+}
+
+/* Pulsante "Segna come spedito" */
+.btn-success {
+  background: #2d7a47;
+  color: #fff;
+  border-color: #2d7a47;
+}
+
+.btn-success:hover {
+  background: #256039;
+  border-color: #256039;
+}

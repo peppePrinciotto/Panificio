@@ -65,9 +65,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
           Prodotti
         </a>
-        <a href="#" class="sidebar-link" data-section="reservations">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Prenotazioni
+        <a href="#" class="sidebar-link" data-section="orders">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          Ordini
+          <span class="orders-badge" id="orders-badge" style="display:none;" aria-label="Ordini da spedire"></span>
         </a>
         <a href="#" class="sidebar-link" data-section="content">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -116,10 +117,10 @@
         </div>
       </section>
 
-      <!-- Sezione Prenotazioni -->
-      <section class="admin-section" id="section-reservations" data-title="Prenotazioni" style="display:none;">
-        <div id="reservations-content">
-          <!-- Popolato da admin-reservations.js -->
+      <!-- Sezione Ordini -->
+      <section class="admin-section" id="section-orders" data-title="Ordini" style="display:none;">
+        <div id="orders-content">
+          <!-- Popolato da admin-orders.js -->
         </div>
       </section>
 
@@ -155,32 +156,21 @@
               <span class="form-error" id="p-name-err"></span>
             </div>
             <div class="form-group">
-              <label for="p-price">Prezzo unitario (€) *</label>
+              <label for="p-price">Prezzo (€) *</label>
               <input type="number" id="p-price" step="0.50" min="0.50" required />
               <span class="form-error" id="p-price-err"></span>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="p-shortdesc">Descrizione breve * <span class="char-counter"><span id="p-shortdesc-count">0</span>/500</span></label>
-            <textarea id="p-shortdesc" rows="3" maxlength="500" required></textarea>
-            <span class="form-error" id="p-shortdesc-err"></span>
+            <label for="p-desc">Descrizione * <span class="char-counter"><span id="p-desc-count">0</span>/500</span></label>
+            <textarea id="p-desc" rows="3" maxlength="500" required></textarea>
+            <span class="form-error" id="p-desc-err"></span>
           </div>
 
           <div class="form-group">
-            <label for="p-longdesc">Descrizione lunga (opzionale)</label>
-            <textarea id="p-longdesc" rows="4"></textarea>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="p-minkg">Quantità minima</label>
-              <input type="number" id="p-minkg" step="1" min="1" value="1" />
-            </div>
-            <div class="form-group">
-              <label for="p-weight">Peso per pezzo (g)</label>
-              <input type="number" id="p-weight" step="1" min="1" placeholder="es. 350" />
-            </div>
+            <label for="p-weight">Peso confezione (g)</label>
+            <input type="number" id="p-weight" step="1" min="1" placeholder="es. 500" />
           </div>
 
           <div class="form-group">
@@ -229,7 +219,7 @@
   <script src="js/admin-auth.js"></script>
   <script src="js/admin-dashboard.js"></script>
   <script src="js/admin-products.js"></script>
-  <script src="js/admin-reservations.js"></script>
+  <script src="js/admin-orders.js"></script>
   <script src="js/admin-content.js"></script>
 </body>
 </html>

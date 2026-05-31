@@ -1,37 +1,98 @@
-// checkout.js — Integrazione Stripe Elements + PayPal SDK dinamico
+// checkout.js — Checkout con Stripe Elements
+// Flusso in due step:
+//   1. Cliente compila dati spedizione → "Procedi al pagamento"
+//      → chiama create-payment-intent → riceve clientSecret + totale server
+//   2. Appare form carta Stripe → "Paga €X,XX"
+//      → stripe.confirmCardPayment → successo/errore
 // Dipende da: config.js, cart.js
 
 (function () {
   'use strict';
 
-  let stripe = null;
-  let cardElement = null;
-  let paypalLoaded = false;
+  let stripe       = null;
+  let cardElement  = null;
+  let clientSecret = null;
+  let serverTotal  = null;
+  let serverShipping = null;
+  let step         = 'shipping'; // 'shipping' | 'payment' | 'done'
 
   // ============================================================
-  // Inizializzazione — attende DOMContentLoaded
+  // Inizializzazione
   // ============================================================
   document.addEventListener('DOMContentLoaded', function () {
     initStripe();
-    loadPaypalSdk();
-    bindCheckoutSummaryUpdate();
+    bindCheckoutEvents();
+    bindDoneBtn();
   });
 
   // ============================================================
-  // Riepilogo ordine nel modal (aggiornato ad ogni apertura)
+  // Stripe Elements
   // ============================================================
-  function bindCheckoutSummaryUpdate() {
-    document.addEventListener('checkout:opened', renderCheckoutSummary);
+  function initStripe() {
+    if (typeof Stripe === 'undefined') {
+      console.warn('[Checkout] Stripe.js non caricato — assicurati che lo script sia incluso nell\'HTML');
+      return;
+    }
+
+    const key = CONFIG.stripe.publishableKey;
+    if (!key || key.includes('XXXX')) {
+      console.warn('[Checkout] Stripe publishableKey non configurata in config.js');
+      return;
+    }
+
+    stripe = Stripe(key);
+
+    const elements = stripe.elements({
+      fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Lora&display=swap' }],
+    });
+
+    const appearance = {
+      theme: 'stripe',
+      variables: {
+        colorPrimary:     '#A07830',
+        colorBackground:  '#FDFAF4',
+        colorText:        '#1C1009',
+        colorDanger:      '#A03020',
+        fontFamily:       'Lora, Georgia, serif',
+        borderRadius:     '4px',
+      },
+    };
+
+    cardElement = elements.create('card', {
+      style: {
+        base: {
+          fontFamily:    "'Lora', Georgia, serif",
+          fontSize:      '15px',
+          color:         '#1C1009',
+          '::placeholder': { color: '#7A6550' },
+          iconColor:     '#A07830',
+        },
+        invalid: {
+          color:     '#A03020',
+          iconColor: '#A03020',
+        },
+      },
+    });
+
+    cardElement.mount('#stripe-card-element');
+
+    cardElement.addEventListener('change', function (e) {
+      const errEl = document.getElementById('stripe-card-errors');
+      if (errEl) errEl.textContent = e.error ? e.error.message : '';
+    });
   }
 
-  function renderCheckoutSummary() {
+  // ============================================================
+  // Riepilogo ordine nel modal
+  // ============================================================
+  function renderCheckoutSummary(overrideShipping) {
     const summaryEl = document.getElementById('checkout-summary');
     if (!summaryEl) return;
 
     const items    = Cart.getItems();
     const subtotal = Cart.getSubtotal();
-    const shipping = Cart.getShipping();
-    const total    = Cart.getTotal();
+    const shipping = overrideShipping !== undefined ? overrideShipping : Cart.getShipping();
+    const total    = subtotal + shipping;
 
     if (items.length === 0) {
       summaryEl.innerHTML = '<p style="color:var(--color-text-muted); font-size:0.9rem;">Carrello vuoto.</p>';
@@ -40,9 +101,13 @@
 
     const rows = items.map(item => `
       <div class="checkout-order-item">
-        <span>${item.name} × ${item.kg} ${item.unit || 'cad.'}</span>
-        <span>€${(item.pricePerKg * item.kg).toFixed(2)}</span>
+        <span>${sanitize(item.name)} × ${item.quantity} conf.</span>
+        <span>€${item.subtotal.toFixed(2)}</span>
       </div>`).join('');
+
+    const shippingLabel = shipping === 0
+      ? '<span style="color:var(--color-gold)">Gratuita</span>'
+      : '€' + shipping.toFixed(2);
 
     summaryEl.innerHTML = `
       ${rows}
@@ -53,7 +118,7 @@
         </div>
         <div class="checkout-total-row">
           <span>Spedizione</span>
-          <span>${shipping === 0 ? '<span style="color:var(--color-gold)">Gratuita</span>' : '€' + shipping.toFixed(2)}</span>
+          <span>${shippingLabel}</span>
         </div>
         <div class="checkout-total-row grand">
           <span>Totale</span>
@@ -63,262 +128,147 @@
   }
 
   // ============================================================
-  // Stripe Elements
+  // Gestione step UI
   // ============================================================
-  function initStripe() {
-    if (typeof Stripe === 'undefined') return;
+  function showShippingStep() {
+    step = 'shipping';
+    const cardWrap = document.getElementById('stripe-card-wrap');
+    const payBtn   = document.getElementById('stripe-pay-btn');
+    if (cardWrap) cardWrap.style.display = 'none';
+    if (payBtn)   { payBtn.disabled = false; payBtn.textContent = 'Procedi al pagamento'; }
+  }
 
-    const key = CONFIG.stripe.publishableKey;
-    if (!key || key === 'pk_test_XXXX') {
-      // Stripe non configurato — mostra avviso solo in development
-      console.warn('[Checkout] Stripe publishableKey non configurata. Aggiorna js/config.js.');
-      disableStripeUI();
-      return;
-    }
-
-    stripe = Stripe(key);
-    const elements = stripe.elements({
-      fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Lora&display=swap' }],
-    });
-
-    cardElement = elements.create('card', {
-      style: {
-        base: {
-          fontFamily: "'Lora', Georgia, serif",
-          fontSize: '15px',
-          color: '#1C1009',
-          '::placeholder': { color: '#7A6550' },
-          iconColor: '#A07830',
-        },
-        invalid: {
-          color: '#B84C4C',
-          iconColor: '#B84C4C',
-        },
-      },
-    });
-
-    cardElement.mount('#stripe-card-element');
-
-    cardElement.addEventListener('change', function (event) {
-      const errEl = document.getElementById('stripe-card-errors');
-      if (errEl) errEl.textContent = event.error ? event.error.message : '';
-    });
-
-    // Pulsante "Paga ora"
-    const payBtn = document.getElementById('stripe-pay-btn');
-    if (payBtn) {
-      payBtn.addEventListener('click', handleStripePayment);
+  function showPaymentStep() {
+    step = 'payment';
+    const cardWrap = document.getElementById('stripe-card-wrap');
+    const payBtn   = document.getElementById('stripe-pay-btn');
+    if (cardWrap) cardWrap.style.display = '';
+    if (payBtn)   {
+      payBtn.disabled    = false;
+      payBtn.textContent = serverTotal ? `Paga €${serverTotal.toFixed(2)}` : 'Paga ora';
     }
   }
 
-  function disableStripeUI() {
-    const cardEl = document.getElementById('stripe-card-element');
+  // ============================================================
+  // Binding eventi
+  // ============================================================
+  function bindCheckoutEvents() {
+    // Reset al (ri)apertura del modal
+    document.addEventListener('checkout:opened', function () {
+      clientSecret   = null;
+      serverTotal    = null;
+      serverShipping = null;
+      showShippingStep();
+      renderCheckoutSummary();
+    });
+
+    // Click sul bottone principale (cambia comportamento in base allo step)
     const payBtn = document.getElementById('stripe-pay-btn');
-    if (cardEl) {
-      cardEl.innerHTML = '<p style="color:var(--color-text-muted); font-size:0.85rem; padding:0.75rem 0;">⚠️ Pagamento con carta non configurato — aggiorna config.js con la tua chiave Stripe.</p>';
-    }
     if (payBtn) {
-      payBtn.disabled = true;
-      payBtn.style.opacity = '0.5';
+      payBtn.addEventListener('click', function () {
+        if (step === 'shipping') handleProceed();
+        else if (step === 'payment') handlePay();
+      });
     }
   }
 
-  async function handleStripePayment() {
-    if (!stripe || !cardElement) return;
-
+  // ============================================================
+  // Step 1: valida form → chiama create-payment-intent
+  // ============================================================
+  async function handleProceed() {
     const validation = validateCheckoutFields();
     if (!validation.valid) return;
 
-    const payBtn = document.getElementById('stripe-pay-btn');
-    setButtonLoading(payBtn, true);
+    if (!stripe) {
+      showCheckoutError('Stripe non è disponibile. Ricarica la pagina.');
+      return;
+    }
 
-    // In produzione qui si chiama il backend per creare il PaymentIntent
-    // e si usa il client_secret per confirmCardPayment.
-    // Per il MVP (test mode) simuliamo la conferma con confirmCardPayment senza secret.
-    const { error } = await stripe.createPaymentMethod({
-      type: 'card',
-      card: cardElement,
-      billing_details: {
-        name: `${getField('co-nome')} ${getField('co-cognome')}`,
-        email: getField('co-email'),
-        address: {
-          line1:       getField('co-indirizzo'),
-          city:        getField('co-citta'),
-          postal_code: getField('co-cap'),
-          country:     'IT',
+    const payBtn = document.getElementById('stripe-pay-btn');
+    setButtonLoading(payBtn, true, 'Calcolo in corso…');
+    clearCheckoutError();
+
+    const items        = Cart.getItems();
+    const customerData = buildCustomerData();
+
+    try {
+      const res = await fetch('/.netlify/functions/create-payment-intent', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ items, customerData }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Errore durante la preparazione del pagamento');
+
+      clientSecret   = data.clientSecret;
+      serverTotal    = data.total;
+      serverShipping = data.shipping;
+
+      // Aggiorna riepilogo con spedizione calcolata dal server
+      renderCheckoutSummary(serverShipping);
+
+      showPaymentStep();
+
+    } catch (err) {
+      showCheckoutError(err.message || 'Errore di rete. Riprova tra qualche istante.');
+      setButtonLoading(payBtn, false, 'Procedi al pagamento');
+    }
+  }
+
+  // ============================================================
+  // Step 2: conferma pagamento Stripe
+  // ============================================================
+  async function handlePay() {
+    if (!stripe || !cardElement || !clientSecret) {
+      showCheckoutError('Stripe non disponibile. Ricarica la pagina e riprova.');
+      return;
+    }
+
+    const payBtn = document.getElementById('stripe-pay-btn');
+    setButtonLoading(payBtn, true, 'Elaborazione pagamento…');
+    clearCheckoutError();
+
+    const { error } = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: {
+        card:             cardElement,
+        billing_details:  {
+          name:  `${getField('co-nome')} ${getField('co-cognome')}`.trim(),
+          email: getField('co-email'),
         },
       },
     });
 
     if (error) {
-      const errEl = document.getElementById('stripe-card-errors');
-      if (errEl) errEl.textContent = error.message;
-      setButtonLoading(payBtn, false);
+      // Errore carta: mostra messaggio, permetti di riprovare
+      showCheckoutError(error.message);
+      setButtonLoading(payBtn, false, serverTotal ? `Paga €${serverTotal.toFixed(2)}` : 'Paga ora');
       return;
     }
 
-    // Registra ordine in localStorage (dashboard admin) e invia a Formspree
-    recordOrderToStorage('stripe', null);
-    await sendOrderToFormspree('stripe', null);
-
-    showCheckoutSuccess();
-    setButtonLoading(payBtn, false);
+    // Pagamento riuscito — il webhook gestisce salvataggio ordine ed email
+    step = 'done';
+    Cart.clear();
+    showCheckoutSuccess(getField('co-email'));
   }
 
   // ============================================================
-  // PayPal SDK — caricato dinamicamente
+  // Costruisce oggetto customerData dai campi del form
   // ============================================================
-  function loadPaypalSdk() {
-    const clientId = CONFIG.paypal.clientId;
-    if (!clientId || clientId === 'XXXX') {
-      console.warn('[Checkout] PayPal clientId non configurato. Aggiorna js/config.js.');
-      showPaypalPlaceholder();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${CONFIG.paypal.currency}&intent=capture`;
-    script.onload = initPaypalButtons;
-    script.onerror = function () {
-      console.warn('[Checkout] Errore nel caricamento PayPal SDK.');
-      showPaypalPlaceholder();
+  function buildCustomerData() {
+    return {
+      name:    `${getField('co-nome')} ${getField('co-cognome')}`.trim(),
+      email:   getField('co-email'),
+      phone:   getField('co-telefono') || '',
+      address: {
+        street:   getField('co-indirizzo'),
+        city:     getField('co-citta'),
+        zip:      getField('co-cap'),
+        province: getField('co-provincia') || '',
+        country:  'IT',
+      },
     };
-    document.head.appendChild(script);
-  }
-
-  function showPaypalPlaceholder() {
-    const container = document.getElementById('paypal-button-container');
-    if (container) {
-      container.innerHTML = '<p style="color:var(--color-text-muted); font-size:0.85rem; padding:0.5rem 0;">⚠️ PayPal non configurato — aggiorna config.js con il tuo client ID.</p>';
-    }
-  }
-
-  function initPaypalButtons() {
-    if (paypalLoaded || typeof paypal === 'undefined') return;
-    paypalLoaded = true;
-
-    paypal.Buttons({
-      style: {
-        layout:  'vertical',
-        color:   'gold',
-        shape:   'rect',
-        label:   'paypal',
-        height:  44,
-      },
-      createOrder: function (data, actions) {
-        const validation = validateCheckoutFields();
-        if (!validation.valid) return Promise.reject(new Error('Dati mancanti'));
-
-        return actions.order.create({
-          purchase_units: [{
-            amount: {
-              value:         Cart.getTotal().toFixed(2),
-              currency_code: CONFIG.paypal.currency,
-            },
-            description: 'Ordine Panificio Roccafiorita',
-          }],
-          payer: {
-            name: {
-              given_name: getField('co-nome'),
-              surname:    getField('co-cognome'),
-            },
-            email_address: getField('co-email'),
-          },
-        });
-      },
-      onApprove: async function (data, actions) {
-        await actions.order.capture();
-        recordOrderToStorage('paypal', data.orderID);
-        await sendOrderToFormspree('paypal', data.orderID);
-        showCheckoutSuccess();
-      },
-      onError: function (err) {
-        console.error('[PayPal] Errore:', err);
-      },
-    }).render('#paypal-button-container');
-  }
-
-  // ============================================================
-  // Registrazione ordine in localStorage (per dashboard admin)
-  // ============================================================
-  function recordOrderToStorage(method, paymentRef) {
-    try {
-      const items    = Cart.getItems();
-      const total    = Cart.getTotal();
-      const shipping = Cart.getShipping();
-
-      const orderItems = items.map(i => ({
-        productId:   i.id,
-        productName: i.name,
-        kg:          i.kg,
-        pricePerKg:  i.pricePerKg,
-        subtotal:    parseFloat((i.kg * i.pricePerKg).toFixed(2)),
-      }));
-
-      // Genera ID ordine: ORD-YYYYMMDD-timestamp
-      const now    = new Date();
-      const datePart = now.toISOString().slice(0, 10).replace(/-/g, '');
-      const orderId  = `ORD-${datePart}-${Date.now() % 100000}`;
-
-      const order = {
-        id:       orderId,
-        date:     now.toISOString(),
-        customer: {
-          name:  `${getField('co-nome')} ${getField('co-cognome')}`,
-          email: getField('co-email'),
-          city:  getField('co-citta'),
-        },
-        items:    orderItems,
-        shipping: shipping,
-        total:    parseFloat(total.toFixed(2)),
-        paymentMethod: method,
-        paymentId:     paymentRef || '—',
-        status:        'paid',
-      };
-
-      const orders = JSON.parse(localStorage.getItem('roccafiorita_sales') || '[]');
-      orders.push(order);
-      localStorage.setItem('roccafiorita_sales', JSON.stringify(orders));
-    } catch (err) {
-      console.warn('[Checkout] Impossibile salvare ordine in localStorage:', err);
-    }
-  }
-
-  // ============================================================
-  // Invio notifica ordine a Formspree
-  // ============================================================
-  async function sendOrderToFormspree(method, paymentRef) {
-    const endpoint = CONFIG.formspree.orderEndpoint;
-    if (!endpoint || endpoint.includes('XXXXXXXX')) return; // non configurato
-
-    const items    = Cart.getItems();
-    const total    = Cart.getTotal();
-    const shipping = Cart.getShipping();
-
-    const orderLines = items.map(i =>
-      `${i.name}: ${i.kg} ${i.unit || 'cad.'} × €${i.pricePerKg}/${i.unit || 'cad.'} = €${(i.kg * i.pricePerKg).toFixed(2)}`
-    ).join('\n');
-
-    const payload = {
-      nome:          `${getField('co-nome')} ${getField('co-cognome')}`,
-      email:         getField('co-email'),
-      indirizzo:     `${getField('co-indirizzo')}, ${getField('co-cap')} ${getField('co-citta')}`,
-      metodo_pagamento: method,
-      riferimento_pagamento: paymentRef || '—',
-      ordine:        orderLines,
-      spedizione:    shipping === 0 ? 'Gratuita' : `€${shipping.toFixed(2)}`,
-      totale:        `€${total.toFixed(2)}`,
-    };
-
-    try {
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-    } catch (err) {
-      console.warn('[Checkout] Formspree non raggiungibile:', err);
-    }
   }
 
   // ============================================================
@@ -352,20 +302,23 @@
         if (err) err.textContent = `${f.label} obbligatorio`;
         return;
       }
-
       if (f.type === 'email' && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
         valid = false;
         el.classList.add('invalid');
         if (err) err.textContent = 'Email non valida';
         return;
       }
-
       if (f.pattern && val && !f.pattern.test(val)) {
         valid = false;
         el.classList.add('invalid');
         if (err) err.textContent = `${f.label} non valido`;
       }
     });
+
+    if (!valid) {
+      const firstInvalid = document.querySelector('.checkout-fields .invalid');
+      if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 
     return { valid };
   }
@@ -378,42 +331,90 @@
     return el ? el.value.trim() : '';
   }
 
-  function setButtonLoading(btn, loading) {
+  function sanitize(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str || '');
+    return div.innerHTML;
+  }
+
+  function setButtonLoading(btn, loading, text) {
     if (!btn) return;
     if (loading) {
       btn.disabled = true;
       btn.dataset.originalText = btn.textContent;
-      btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Elaborazione…';
+      btn.innerHTML = `<span class="spinner" aria-hidden="true"></span> ${text || 'Elaborazione…'}`;
     } else {
-      btn.disabled = false;
-      btn.textContent = btn.dataset.originalText || 'Paga ora';
+      btn.disabled    = false;
+      btn.textContent = text || btn.dataset.originalText || 'Procedi al pagamento';
     }
   }
 
-  function showCheckoutSuccess() {
-    Cart.clear();
-    const formWrap = document.getElementById('checkout-form-wrap');
+  function showCheckoutSuccess(email) {
+    const formWrap  = document.getElementById('checkout-form-wrap');
     const successEl = document.getElementById('checkout-success');
-    if (formWrap) formWrap.style.display = 'none';
+
+    if (successEl) {
+      const msgEl = successEl.querySelector('p');
+      if (msgEl) {
+        msgEl.innerHTML =
+          'Ordine confermato! Ti abbiamo inviato una email di conferma a ' +
+          `<strong>${sanitize(email || '')}</strong>.`;
+      }
+    }
+
+    if (formWrap)  formWrap.style.display  = 'none';
     if (successEl) successEl.classList.add('visible');
   }
 
+  function showCheckoutError(message) {
+    let errEl = document.getElementById('checkout-global-error');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.id = 'checkout-global-error';
+      errEl.setAttribute('role', 'alert');
+      errEl.style.cssText = [
+        'margin:1rem 0',
+        'padding:0.75rem 1rem',
+        'background:#FEF2F2',
+        'border:1px solid #FCA5A5',
+        'border-radius:6px',
+        'color:#A03020',
+        'font-size:0.875rem',
+        'line-height:1.5',
+      ].join(';');
+      const payBtn = document.getElementById('stripe-pay-btn');
+      if (payBtn && payBtn.parentNode) payBtn.parentNode.insertBefore(errEl, payBtn);
+    }
+    errEl.textContent   = message;
+    errEl.style.display = 'block';
+    errEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function clearCheckoutError() {
+    const errEl = document.getElementById('checkout-global-error');
+    if (errEl) errEl.style.display = 'none';
+  }
+
+  // ============================================================
   // Bottone "Chiudi" nella schermata successo
-  document.addEventListener('DOMContentLoaded', function () {
+  // ============================================================
+  function bindDoneBtn() {
     const doneBtn = document.getElementById('checkout-done-btn');
     if (doneBtn) {
       doneBtn.addEventListener('click', function () {
         document.dispatchEvent(new CustomEvent('checkout:close'));
       });
     }
-  });
+  }
 
-  // Esponi funzione per riaprire il form (usata da main.js dopo svuotamento)
+  // Esponi funzione per resettare il form (usata da main.js)
   window.CheckoutResetForm = function () {
-    const formWrap = document.getElementById('checkout-form-wrap');
+    const formWrap  = document.getElementById('checkout-form-wrap');
     const successEl = document.getElementById('checkout-success');
-    if (formWrap) formWrap.style.display = '';
+    if (formWrap)  formWrap.style.display = '';
     if (successEl) successEl.classList.remove('visible');
+    clearCheckoutError();
+    showShippingStep();
   };
 
 }());

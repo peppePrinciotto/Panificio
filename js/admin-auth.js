@@ -43,14 +43,23 @@
     }
   }
 
-  function createSession() {
+  function createSession(token) {
+    // Token salvato anche come stringa diretta per lettura affidabile
+    sessionStorage.setItem('admin_token', token || '');
     sessionStorage.setItem('admin_session', JSON.stringify({
       loggedIn:  true,
       expiresAt: Date.now() + SESSION_DURATION_MS,
+      token:     token || '',
     }));
   }
 
+  function getToken() {
+    // Lettura diretta — più affidabile del JSON parsing
+    return sessionStorage.getItem('admin_token') || '';
+  }
+
   function logout() {
+    sessionStorage.removeItem('admin_token');
     sessionStorage.removeItem('admin_session');
     window.location.href = 'admin.html';
   }
@@ -94,17 +103,48 @@
   // Login
   // ============================================================
   async function login(password) {
+    const hash = await hashPassword(password);
+
+    // Se ADMIN_HASH è ancora il placeholder, mostra istruzioni in console
     if (ADMIN_HASH === 'HASH_SHA256_DA_SOSTITUIRE') {
-      // Modalità sviluppo: mostra l'hash in console per configurazione iniziale
-      const hash = await hashPassword(password);
-      console.info('[Admin] Hash della password inserita:', hash);
-      console.info('[Admin] Sostituire ADMIN_HASH in admin-auth.js con questo valore.');
-      // In modalità sviluppo, accede direttamente
-      return true;
+      console.info('[Admin] ─────────────────────────────────────────────────');
+      console.info('[Admin] SETUP INIZIALE — hash della password inserita:');
+      console.info('[Admin]  ', hash);
+      console.info('[Admin] Copia questo valore in:');
+      console.info('[Admin]   1. const ADMIN_HASH in admin-auth.js');
+      console.info('[Admin]   2. Variabile ADMIN_HASH su Netlify (Environment variables)');
+      console.info('[Admin] ─────────────────────────────────────────────────');
     }
 
-    const hash = await hashPassword(password);
-    return hash === ADMIN_HASH;
+    // Verifica sempre lato server chiamando admin-data.js
+    try {
+      const res = await fetch('/.netlify/functions/admin-data?action=auth-check', {
+        method:  'GET',
+        headers: { 'Authorization': 'Bearer ' + hash },
+      });
+
+      if (res.ok)             return hash; // 200 → password corretta
+      if (res.status === 401) return null; // 401 → password sbagliata
+
+      // 500 o altro errore server
+      let msg = 'Errore server (' + res.status + ')';
+      try { const d = await res.json(); msg = d.error || msg; } catch (_) {}
+      console.error('[Admin] Errore verifica:', msg);
+      throw new Error(msg);
+
+    } catch (err) {
+      // Se è già un errore server esplicitiamo, altrimenti è un errore di rete
+      if (err.message && (err.message.includes('Errore server') || err.message.includes('Configurazione'))) {
+        throw err;
+      }
+      // Rete non raggiungibile (sviluppo locale senza Netlify Dev)
+      console.warn('[Admin] admin-data.js non raggiungibile:', err.message);
+      console.warn('[Admin] Fallback: validazione locale (solo sviluppo)');
+      if (ADMIN_HASH !== 'HASH_SHA256_DA_SOSTITUIRE') {
+        return hash === ADMIN_HASH ? hash : null;
+      }
+      throw new Error('Funzione admin non raggiungibile. Avvia Netlify Dev per il testing locale.');
+    }
   }
 
   // ============================================================
@@ -178,26 +218,41 @@
       loginBtn.disabled    = true;
       loginBtn.textContent = 'Verifica…';
 
-      const ok = await login(password);
+      let hashOrNull = null;
+      let serverError = null;
 
-      if (ok) {
+      try {
+        hashOrNull = await login(password);
+      } catch (err) {
+        serverError = err.message;
+      }
+
+      if (hashOrNull) {
         resetLockout();
-        createSession();
+        createSession(hashOrNull);
         showAdmin();
       } else {
-        recordFailedAttempt();
+        if (serverError) {
+          // Errore server/rete — non conta come tentativo fallito
+          if (errEl) {
+            errEl.textContent   = serverError;
+            errEl.style.display = 'block';
+          }
+        } else {
+          // Password sbagliata
+          recordFailedAttempt();
 
-        if (errEl) {
-          errEl.textContent  = 'Credenziali non valide.';
-          errEl.style.display = 'block';
+          if (errEl) {
+            errEl.textContent   = 'Credenziali non valide.';
+            errEl.style.display = 'block';
+          }
+
+          if (isLockedOut()) {
+            if (errEl) errEl.style.display = 'none';
+            startCountdown();
+          }
         }
 
-        if (isLockedOut()) {
-          if (errEl) errEl.style.display = 'none';
-          startCountdown();
-        }
-
-        // Svuota password
         document.getElementById('admin-password').value = '';
         loginBtn.disabled    = false;
         loginBtn.textContent = 'Accedi';
@@ -328,6 +383,7 @@
     checkSession,
     logout,
     hashPassword, // esposto per generare l'hash in console
+    getToken,     // usato dai moduli admin per le chiamate a admin-data.js
   };
 
 }());

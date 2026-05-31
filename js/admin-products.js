@@ -1,40 +1,54 @@
 // admin-products.js — Gestione prodotti nel pannello admin
-// Legge/scrive su localStorage['roccafiorita_products']
+// Legge/scrive su Supabase via /.netlify/functions/admin-data
 
 (function () {
   'use strict';
 
-  const STORAGE_KEY = 'roccafiorita_products';
+  const API = '/.netlify/functions/admin-data';
 
   // ============================================================
-  // Storage
+  // Helper API
   // ============================================================
-  function getProducts() {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch (_) {}
-    // Fallback ai prodotti di CONFIG
-    return CONFIG.products.map(p => ({
-      id:               p.id,
-      name:             p.name,
-      shortDescription: p.description || '',
-      longDescription:  '',
-      pricePerKg:       p.pricePerKg,
-      minKg:            Math.max(1, Math.round(p.minKg || 1)),
-      weight:           p.weight || '',
-      weightG:          p.weightG || null,
-      available:        true,
-      stock:            null, // null = illimitato
-      imageUrl:         p.imageUrl || '',
-      placeholderColor: p.placeholderColor || '#C4A882',
-      createdAt:        new Date().toISOString(),
-      updatedAt:        new Date().toISOString(),
-    }));
+  function authHeaders() {
+    const token = sessionStorage.getItem('admin_token') || '';
+    console.log('[products] Token inviato:', token ? 'presente' : 'NULLO',
+      '| Primi 8:', token ? token.substring(0, 8) : 'N/A');
+    return {
+      'Content-Type':  'application/json',
+      'Authorization': 'Bearer ' + token,
+    };
   }
 
-  function saveProducts(products) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  function apiFetch(method, params, body) {
+    const url = API + '?' + new URLSearchParams(params).toString();
+    const opts = { method, headers: authHeaders() };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(url, opts).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) throw new Error(data.error || 'Errore API (' + res.status + ')');
+        return data;
+      });
+    });
+  }
+
+  function getProducts() {
+    return apiFetch('GET', { action: 'products' });
+  }
+
+  function createProduct(data) {
+    return apiFetch('POST', { action: 'product' }, data);
+  }
+
+  function updateProduct(id, data) {
+    return apiFetch('PUT', { action: 'product', id: id }, data);
+  }
+
+  function deleteProduct(id) {
+    return apiFetch('DELETE', { action: 'product', id: id });
+  }
+
+  function seedProducts(products) {
+    return apiFetch('POST', { action: 'seed-products' }, { products: products });
   }
 
   function sanitize(str) {
@@ -46,11 +60,9 @@
   // ============================================================
   // Render lista prodotti
   // ============================================================
-  function renderProductList() {
+  function renderProductList(products) {
     const container = document.getElementById('products-content');
     if (!container) return;
-
-    const products = getProducts();
 
     container.innerHTML = `
       <div class="product-list-header">
@@ -61,11 +73,6 @@
         </button>
       </div>
 
-      <div class="info-banner">
-        <strong>Come funziona:</strong> le modifiche si riflettono sul sito al prossimo caricamento della pagina.
-        Le prenotazioni visibili nell'admin sono quelle ricevute da <em>questo browser</em>.
-      </div>
-
       <div id="product-list">
         ${products.length === 0 ? renderEmptyState('Nessun prodotto. Aggiungine uno.') : products.map(renderProductCard).join('')}
       </div>`;
@@ -74,23 +81,22 @@
 
     container.querySelectorAll('.edit-product-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        const product = getProducts().find(p => p.id === id);
+        const product = products.find(p => p.id === btn.dataset.id);
         if (product) openProductModal(product);
       });
     });
 
     container.querySelectorAll('.toggle-available-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id       = btn.dataset.id;
-        const products = getProducts();
-        const product  = products.find(p => p.id === id);
-        if (product) {
-          product.available = !product.available;
-          product.updatedAt = new Date().toISOString();
-          saveProducts(products);
-          renderProductList();
-        }
+        const product = products.find(p => p.id === btn.dataset.id);
+        if (!product) return;
+        const updated = Object.assign({}, product, {
+          available: !product.available,
+        });
+        setLoadingState(true);
+        updateProduct(product.id, updated)
+          .then(() => loadAndRender())
+          .catch(err => { alert('Errore: ' + err.message); setLoadingState(false); });
       });
     });
   }
@@ -112,16 +118,16 @@
 
     const thumb = p.imageUrl
       ? `<img class="product-img-thumb" src="${sanitize(p.imageUrl)}" alt="${sanitize(p.name)}" loading="lazy" />`
-      : `<div class="product-img-thumb" style="background:${sanitize(p.placeholderColor || '#C4A882')};"></div>`;
+      : `<div class="product-img-thumb" style="background:#C4A882;"></div>`;
 
     return `
       <div class="product-card-admin">
         ${thumb}
         <div class="product-info">
           <div class="product-info-name">${sanitize(p.name)}</div>
-          <div class="product-info-desc">${sanitize(p.shortDescription || '')}</div>
+          <div class="product-info-desc">${sanitize(p.description || '')}</div>
         </div>
-        <div class="product-info-price">€${parseFloat(p.pricePerKg).toFixed(2)}/cad.</div>
+        <div class="product-info-price">€${parseFloat(p.price).toFixed(2)}/conf.</div>
         ${weightLabel}
         ${availBadge}
         ${stockBadge}
@@ -136,22 +142,72 @@
     return `<div class="empty-state"><p>${sanitize(msg)}</p></div>`;
   }
 
+  function setLoadingState(loading) {
+    const list = document.getElementById('product-list');
+    if (!list) return;
+    if (loading) {
+      list.style.opacity = '0.5';
+      list.style.pointerEvents = 'none';
+    } else {
+      list.style.opacity = '';
+      list.style.pointerEvents = '';
+    }
+  }
+
+  // ============================================================
+  // Carica e renderizza (fetch + seed se vuoto)
+  // ============================================================
+  function loadAndRender() {
+    const container = document.getElementById('products-content');
+    if (!container) return;
+
+    container.innerHTML = '<div class="loading-state" style="padding:2rem; text-align:center; color:var(--color-text-muted);">Caricamento prodotti…</div>';
+
+    getProducts()
+      .then(function (products) {
+        if (products.length === 0) {
+          // Prima volta: popola con i prodotti di default
+          const defaults = CONFIG.products.map(p => ({
+            id:          p.id,
+            name:        p.name,
+            description: p.description || '',
+            price:       p.price,
+            weightG:     p.weight_g || p.weightG || null,
+            stock:       null,
+            available:   true,
+            imageUrl:    p.imageUrl || '',
+          }));
+          return seedProducts(defaults).then(() => getProducts());
+        }
+        return products;
+      })
+      .then(function (products) {
+        renderProductList(products);
+      })
+      .catch(function (err) {
+        if (container) {
+          container.innerHTML = `<div class="empty-state" style="color:#c0392b;">
+            <p>Errore caricamento prodotti: ${sanitize(err.message)}</p>
+            <button class="btn-admin btn-ghost btn-sm" onclick="location.reload()">Riprova</button>
+          </div>`;
+        }
+      });
+  }
+
   // ============================================================
   // Modal Prodotto
   // ============================================================
   function openProductModal(product) {
-    const overlay    = document.getElementById('product-modal-overlay');
-    const titleEl    = document.getElementById('product-modal-title');
-    const deleteBtn  = document.getElementById('product-delete-btn');
+    const overlay   = document.getElementById('product-modal-overlay');
+    const titleEl   = document.getElementById('product-modal-title');
+    const deleteBtn = document.getElementById('product-delete-btn');
 
     if (!overlay) return;
 
-    // Reset form
     const form = document.getElementById('product-form');
     if (form) form.reset();
 
-    // Pulizia errori
-    ['p-name', 'p-price', 'p-shortdesc'].forEach(id => {
+    ['p-name', 'p-price', 'p-desc'].forEach(id => {
       const errEl = document.getElementById(id + '-err');
       if (errEl) errEl.textContent = '';
       const el = document.getElementById(id);
@@ -159,26 +215,22 @@
     });
 
     if (product) {
-      // Modifica prodotto esistente
       titleEl.textContent = 'Modifica Prodotto';
       document.getElementById('product-id-field').value = product.id;
       document.getElementById('p-name').value            = product.name || '';
-      document.getElementById('p-price').value           = product.pricePerKg || '';
-      document.getElementById('p-shortdesc').value       = product.shortDescription || '';
-      document.getElementById('p-longdesc').value        = product.longDescription || '';
-      document.getElementById('p-minkg').value           = Math.max(1, Math.round(product.minKg || 1));
+      document.getElementById('p-price').value           = product.price || '';
+      document.getElementById('p-desc').value            = product.description || '';
       document.getElementById('p-weight').value          = product.weightG || '';
       document.getElementById('p-stock').value           = (product.stock !== null && product.stock !== undefined) ? product.stock : '';
-      document.getElementById('p-available').checked    = product.available !== false;
+      document.getElementById('p-available').checked     = product.available !== false;
       setImagePreview(product.imageUrl || null);
       if (deleteBtn) deleteBtn.style.display = '';
     } else {
-      // Nuovo prodotto
       titleEl.textContent = 'Aggiungi Prodotto';
       document.getElementById('product-id-field').value = '';
       document.getElementById('p-weight').value          = '';
       document.getElementById('p-stock').value           = '';
-      document.getElementById('p-available').checked    = true;
+      document.getElementById('p-available').checked     = true;
       setImagePreview(null);
       if (deleteBtn) deleteBtn.style.display = 'none';
     }
@@ -197,11 +249,11 @@
   // Immagine: anteprima & upload
   // ============================================================
   function setImagePreview(dataUrl) {
-    const area    = document.getElementById('img-upload-area');
-    const preview = document.getElementById('p-img-preview');
-    const prompt  = document.getElementById('img-upload-prompt');
+    const area      = document.getElementById('img-upload-area');
+    const preview   = document.getElementById('p-img-preview');
+    const prompt    = document.getElementById('img-upload-prompt');
     const removeBtn = document.getElementById('img-remove-btn');
-    const hidden  = document.getElementById('p-imageurl');
+    const hidden    = document.getElementById('p-imageurl');
 
     if (dataUrl) {
       preview.src = dataUrl;
@@ -242,9 +294,9 @@
   }
 
   function initImageUpload() {
-    const area       = document.getElementById('img-upload-area');
-    const fileInput  = document.getElementById('p-imageupload');
-    const removeBtn  = document.getElementById('img-remove-btn');
+    const area      = document.getElementById('img-upload-area');
+    const fileInput = document.getElementById('p-imageupload');
+    const removeBtn = document.getElementById('img-remove-btn');
 
     if (!area || !fileInput) return;
 
@@ -288,76 +340,12 @@
   }
 
   // ============================================================
-  // Contatore caratteri descrizione breve
+  // Contatore caratteri descrizione
   // ============================================================
   function updateCharCounter() {
-    const textarea = document.getElementById('p-shortdesc');
-    const counter  = document.getElementById('p-shortdesc-count');
-    if (textarea && counter) {
-      counter.textContent = textarea.value.length;
-    }
-  }
-
-  // ============================================================
-  // Salva prodotto
-  // ============================================================
-  function saveProduct(formData) {
-    const products = getProducts();
-    const existingId = formData.id;
-
-    const now = new Date().toISOString();
-
-    if (existingId) {
-      // Aggiorna esistente
-      const idx = products.findIndex(p => p.id === existingId);
-      if (idx >= 0) {
-        products[idx] = Object.assign(products[idx], {
-          name:             formData.name,
-          shortDescription: formData.shortDescription,
-          longDescription:  formData.longDescription,
-          pricePerKg:       formData.pricePerKg,
-          minKg:            formData.minKg,
-          weightG:          formData.weightG,
-          stock:            formData.stock,
-          available:        formData.available,
-          imageUrl:         formData.imageUrl,
-          updatedAt:        now,
-        });
-      }
-    } else {
-      // Crea nuovo
-      const newId = formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      products.push({
-        id:               newId + '-' + Date.now() % 10000,
-        name:             formData.name,
-        shortDescription: formData.shortDescription,
-        longDescription:  formData.longDescription,
-        pricePerKg:       formData.pricePerKg,
-        minKg:            formData.minKg,
-        weightG:          formData.weightG,
-        stock:            formData.stock,
-        available:        formData.available,
-        imageUrl:         formData.imageUrl,
-        placeholderColor: '#C4A882',
-        createdAt:        now,
-        updatedAt:        now,
-      });
-    }
-
-    saveProducts(products);
-    closeProductModal();
-    renderProductList();
-  }
-
-  // ============================================================
-  // Elimina prodotto
-  // ============================================================
-  function deleteProduct(id) {
-    if (!confirm('Sei sicuro di voler eliminare questo prodotto?')) return;
-    const products = getProducts().filter(p => p.id !== id);
-    saveProducts(products);
-    closeProductModal();
-    renderProductList();
+    const textarea = document.getElementById('p-desc');
+    const counter  = document.getElementById('p-desc-count');
+    if (textarea && counter) counter.textContent = textarea.value.length;
   }
 
   // ============================================================
@@ -366,7 +354,7 @@
   function validateProductForm() {
     let valid = true;
 
-    const nameEl = document.getElementById('p-name');
+    const nameEl  = document.getElementById('p-name');
     const nameErr = document.getElementById('p-name-err');
     if (!nameEl.value.trim()) {
       nameEl.classList.add('invalid');
@@ -377,9 +365,9 @@
       if (nameErr) nameErr.textContent = '';
     }
 
-    const priceEl = document.getElementById('p-price');
+    const priceEl  = document.getElementById('p-price');
     const priceErr = document.getElementById('p-price-err');
-    const price = parseFloat(priceEl.value);
+    const price    = parseFloat(priceEl.value);
     if (isNaN(price) || price < 0.5) {
       priceEl.classList.add('invalid');
       if (priceErr) priceErr.textContent = 'Prezzo non valido (min €0.50)';
@@ -389,11 +377,11 @@
       if (priceErr) priceErr.textContent = '';
     }
 
-    const descEl = document.getElementById('p-shortdesc');
-    const descErr = document.getElementById('p-shortdesc-err');
+    const descEl  = document.getElementById('p-desc');
+    const descErr = document.getElementById('p-desc-err');
     if (!descEl.value.trim()) {
       descEl.classList.add('invalid');
-      if (descErr) descErr.textContent = 'Descrizione breve obbligatoria';
+      if (descErr) descErr.textContent = 'Descrizione obbligatoria';
       valid = false;
     } else {
       descEl.classList.remove('invalid');
@@ -404,7 +392,44 @@
   }
 
   // ============================================================
-  // Inizializzazione event listeners modal
+  // Salva prodotto (crea o aggiorna)
+  // ============================================================
+  function handleSaveProduct(formData) {
+    const saveBtn = document.querySelector('#product-form [type="submit"]');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Salvataggio…'; }
+
+    const op = formData.id
+      ? updateProduct(formData.id, formData)
+      : createProduct(formData);
+
+    op
+      .then(() => {
+        closeProductModal();
+        loadAndRender();
+      })
+      .catch(function (err) {
+        alert('Errore salvataggio: ' + err.message);
+      })
+      .finally(function () {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salva'; }
+      });
+  }
+
+  // ============================================================
+  // Elimina prodotto
+  // ============================================================
+  function handleDeleteProduct(id) {
+    if (!confirm('Sei sicuro di voler eliminare questo prodotto?')) return;
+    deleteProduct(id)
+      .then(() => {
+        closeProductModal();
+        loadAndRender();
+      })
+      .catch(err => alert('Errore eliminazione: ' + err.message));
+  }
+
+  // ============================================================
+  // Event listeners modal
   // ============================================================
   function initModalEvents() {
     const overlay   = document.getElementById('product-modal-overlay');
@@ -412,7 +437,6 @@
     const cancelBtn = document.getElementById('product-cancel-btn');
     const deleteBtn = document.getElementById('product-delete-btn');
     const form      = document.getElementById('product-form');
-    const shortdesc = document.getElementById('p-shortdesc');
 
     if (closeBtn)  closeBtn.addEventListener('click', closeProductModal);
     if (cancelBtn) cancelBtn.addEventListener('click', closeProductModal);
@@ -423,14 +447,13 @@
       });
     }
 
-    if (shortdesc) {
-      shortdesc.addEventListener('input', updateCharCounter);
-    }
+    const desc = document.getElementById('p-desc');
+    if (desc) desc.addEventListener('input', updateCharCounter);
 
     if (deleteBtn) {
       deleteBtn.addEventListener('click', function () {
         const id = document.getElementById('product-id-field').value;
-        if (id) deleteProduct(id);
+        if (id) handleDeleteProduct(id);
       });
     }
 
@@ -439,23 +462,21 @@
         e.preventDefault();
         if (!validateProductForm()) return;
 
-        const stockRaw = document.getElementById('p-stock').value.trim();
-        saveProduct({
-          id:               document.getElementById('product-id-field').value,
-          name:             document.getElementById('p-name').value.trim(),
-          shortDescription: document.getElementById('p-shortdesc').value.trim(),
-          longDescription:  document.getElementById('p-longdesc').value.trim(),
-          pricePerKg:       parseFloat(document.getElementById('p-price').value),
-          minKg:            parseInt(document.getElementById('p-minkg').value, 10) || 1,
-          weightG:          document.getElementById('p-weight').value.trim() === '' ? null : parseInt(document.getElementById('p-weight').value, 10),
-          stock:            stockRaw === '' ? null : parseInt(stockRaw, 10),
-          available:        document.getElementById('p-available').checked,
-          imageUrl:         document.getElementById('p-imageurl').value.trim(),
+        const stockRaw  = document.getElementById('p-stock').value.trim();
+        const weightRaw = document.getElementById('p-weight').value.trim();
+        handleSaveProduct({
+          id:          document.getElementById('product-id-field').value,
+          name:        document.getElementById('p-name').value.trim(),
+          description: document.getElementById('p-desc').value.trim(),
+          price:       parseFloat(document.getElementById('p-price').value),
+          weightG:     weightRaw === '' ? null : parseInt(weightRaw, 10),
+          stock:       stockRaw === '' ? null : parseInt(stockRaw, 10),
+          available:   document.getElementById('p-available').checked,
+          imageUrl:    document.getElementById('p-imageurl').value.trim(),
         });
       });
     }
 
-    // Chiudi con ESC
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && overlay && overlay.style.display !== 'none') {
         closeProductModal();
@@ -473,7 +494,7 @@
 
   document.addEventListener('admin:navigate', function (e) {
     if (e.detail.section === 'products') {
-      renderProductList();
+      loadAndRender();
     }
   });
 

@@ -1957,3 +1957,53 @@ p  { font-size: 1rem; color: var(--color-dark); }
   height: 24px;
   flex-shrink: 0;
 }
+
+/* ============================================================
+   Skeleton loader — card prodotti durante caricamento da Supabase
+   ============================================================ */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.product-card--skeleton {
+  pointer-events: none;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--color-cream);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.skeleton-line {
+  height: 0.9rem;
+  background: var(--color-cream);
+  border-radius: 4px;
+  margin-bottom: 0.6rem;
+}
+
+.skeleton-line--title {
+  width: 60%;
+  height: 1.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-line--short {
+  width: 35%;
+  height: 0.75rem;
+}
+
+.skeleton-line--desc {
+  width: 90%;
+}
+
+.skeleton-btn {
+  height: 2.4rem;
+  background: var(--color-cream);
+  border-radius: var(--radius-btn);
+  margin-top: 1rem;
+  width: 100%;
+}
