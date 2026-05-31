@@ -200,9 +200,7 @@
       serverTotal    = data.total;
       serverShipping = data.shipping;
 
-      // Aggiorna riepilogo con spedizione calcolata dal server
       renderCheckoutSummary(serverShipping);
-
       showPaymentStep();
 
     } catch (err) {
