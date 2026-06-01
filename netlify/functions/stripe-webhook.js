@@ -36,13 +36,18 @@ async function saveOrderToSupabase(order) {
   }
 
   const row = {
-    id:             order.id,
-    customer:       order.customer,
-    items:          order.items,
-    total:          order.total,
-    shipping:       order.shipping_cost,
-    payment_method: 'stripe',
-    status:         'paid',
+    id:               order.id,
+    customer_name:    order.customer_name  || '',
+    customer_email:   order.customer_email || '',
+    customer_phone:   order.customer_phone || '',
+    shipping_address: order.shipping_address || {},
+    items:            order.items || [],
+    subtotal:         order.subtotal || 0,
+    shipping_cost:    order.shipping_cost || 0,
+    total:            order.total || 0,
+    stripe_session_id: order.stripe_payment_intent || '',
+    payment_method:   'stripe',
+    status:           'paid',
   };
 
   const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
