@@ -50,6 +50,10 @@ async function saveOrderToSupabase(order) {
     status:           'paid',
   };
 
+  console.log('[webhook] Row da salvare:', JSON.stringify(row));
+  console.log('[webhook] SUPABASE_URL:', process.env.SUPABASE_URL ? 'presente' : 'MANCANTE');
+  console.log('[webhook] SERVICE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'presente' : 'MANCANTE');
+
   const res = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
     method:  'POST',
     headers: {
@@ -61,10 +65,10 @@ async function saveOrderToSupabase(order) {
     body: JSON.stringify(row),
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error('Supabase orders: ' + text);
-  }
+  console.log('[webhook] Supabase status:', res.status);
+  const responseText = await res.text();
+  console.log('[webhook] Supabase response:', responseText);
+  if (!res.ok) throw new Error('Supabase orders: ' + responseText);
 }
 
 // ============================================================
