@@ -36,7 +36,6 @@ async function saveOrderToSupabase(order) {
   }
 
   const row = {
-    id:               order.id,
     customer_name:    order.customer_name  || '',
     customer_email:   order.customer_email || '',
     customer_phone:   order.customer_phone || '',
@@ -69,6 +68,10 @@ async function saveOrderToSupabase(order) {
   const responseText = await res.text();
   console.log('[webhook] Supabase response:', responseText);
   if (!res.ok) throw new Error('Supabase orders: ' + responseText);
+
+  let saved;
+  try { saved = JSON.parse(responseText); } catch (_) {}
+  order.id = (Array.isArray(saved) ? saved[0]?.id : saved?.id) || order.id;
 }
 
 // ============================================================
