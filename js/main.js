@@ -11,6 +11,7 @@
     initCopyrightYear();
     initNavbar();
     initHamburger();
+    initShippingSettings(); // aggiorna CONFIG.shipping da Supabase prima del carrello
     initProductCards();
     initCartSidebar();
     initCheckoutModal();
@@ -30,6 +31,22 @@
     const div = document.createElement('div');
     div.textContent = String(str);
     return div.innerHTML;
+  }
+
+  // ============================================================
+  // Impostazioni spedizione — legge da Supabase e aggiorna CONFIG
+  // ============================================================
+  function initShippingSettings() {
+    fetch('/.netlify/functions/get-settings')
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (data) {
+        if (!data) return;
+        if (typeof data.freeThreshold === 'number') CONFIG.shipping.freeThreshold = data.freeThreshold;
+        if (typeof data.flatRate      === 'number') CONFIG.shipping.flatRate      = data.flatRate;
+        // Ri-renderizza il carrello con i valori aggiornati
+        document.dispatchEvent(new CustomEvent('cart:updated'));
+      })
+      .catch(function () { /* usa valori default da config.js */ });
   }
 
   // ============================================================
