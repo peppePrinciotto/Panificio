@@ -11,8 +11,8 @@
 
 const Stripe = require('stripe');
 
-const FREE_THRESHOLD = 60; // spedizione gratuita sopra questa cifra (€)
-const FLAT_RATE      = 8;  // costo spedizione flat (€)
+const FREE_THRESHOLD_DEFAULT = 60; // fallback se Supabase non risponde
+const FLAT_RATE_DEFAULT      = 8;
 
 exports.handler = async function (event) {
   const headers = {
@@ -57,7 +57,24 @@ exports.handler = async function (event) {
   }
 
   try {
-    // ── 1. Leggi prezzi reali da Supabase ──────────────────────────
+    // ── 1. Leggi impostazioni spedizione da Supabase ───────────────
+    let freeThreshold = FREE_THRESHOLD_DEFAULT;
+    let flatRate      = FLAT_RATE_DEFAULT;
+    try {
+      const settingsRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/settings?key=in.(shipping_free_threshold,shipping_flat_rate)&select=key,value`,
+        { headers: { 'apikey': SERVICE_KEY, 'Authorization': 'Bearer ' + SERVICE_KEY } }
+      );
+      if (settingsRes.ok) {
+        const rows = await settingsRes.json();
+        rows.forEach(function (r) {
+          if (r.key === 'shipping_free_threshold') freeThreshold = parseFloat(r.value) || FREE_THRESHOLD_DEFAULT;
+          if (r.key === 'shipping_flat_rate')      flatRate      = parseFloat(r.value) || FLAT_RATE_DEFAULT;
+        });
+      }
+    } catch (_) { /* usa valori default */ }
+
+    // ── 2. Leggi prezzi reali da Supabase ──────────────────────────
     const ids      = [...new Set(items.map(i => i.id))];
     const idsParam = ids.map(id => encodeURIComponent(id)).join(',');
 
@@ -97,7 +114,7 @@ exports.handler = async function (event) {
     });
 
     subtotal          = parseFloat(subtotal.toFixed(2));
-    const shipping    = subtotal >= FREE_THRESHOLD ? 0 : FLAT_RATE;
+    const shipping    = subtotal >= freeThreshold ? 0 : flatRate;
     const total       = parseFloat((subtotal + shipping).toFixed(2));
 
     // ── 3. Crea PaymentIntent Stripe ──────────────────────────────

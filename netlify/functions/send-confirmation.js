@@ -54,9 +54,9 @@ async function sendEmailViaResend(order) {
     'api.resend.com',
     '/emails',
     {
-      from:    'onboarding@resend.dev',
+      from:    'onboarding@resend.dev',       // ← MODIFICA QUI: mittente (es. 'Panificio Roccafiorita <noreply@tuodominio.it>')
       to:      [order.customer.email],
-      subject: 'Grazie per il tuo ordine — Panificio Roccafiorita',
+      subject: 'Grazie per il tuo ordine — Panificio Roccafiorita', // ← MODIFICA QUI: oggetto email
       html:    buildEmailHtml(order),
     },
     { 'Authorization': 'Bearer ' + RESEND_KEY }
@@ -120,10 +120,13 @@ function buildEmailHtml(order) {
           <!-- Saluto -->
           <tr>
             <td style="padding:40px 8px 0;">
+              <!-- MODIFICA QUI: saluto personalizzato (es. "Cara" per clienti donna) -->
               <p style="font-size:22px;color:#3D2314;margin:0 0 16px;line-height:1.3;">Caro ${esc(firstName)},</p>
+              <!-- MODIFICA QUI: messaggio principale (riga di conferma) -->
               <p style="font-size:15px;line-height:1.85;color:#3D2314;margin:0 0 10px;">
                 il tuo ordine è confermato!
               </p>
+              <!-- MODIFICA QUI: messaggio secondario (descrizione del panificio) -->
               <p style="font-size:15px;line-height:1.85;color:#5C4030;margin:0 0 32px;">
                 Siamo già al lavoro per prepararti i nostri prodotti con la stessa dedizione
                 di sempre. Ogni pezzo viene impastato e cotto a mano nella nostra bottega
@@ -200,6 +203,7 @@ function buildEmailHtml(order) {
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#E8DCC8;border-left:3px solid #A07830;border-radius:0 4px 4px 0;">
                 <tr>
                   <td style="padding:16px 20px;">
+                    <!-- MODIFICA QUI: messaggio finale con tempi di spedizione -->
                     <p style="margin:0;font-size:14px;color:#3D2314;line-height:1.85;">
                       <strong>Tempi di consegna stimati:</strong> i tuoi prodotti vengono preparati
                       con cura e affidati al corriere entro <strong>2–3 giorni lavorativi</strong>.
@@ -248,11 +252,13 @@ function buildEmailHtml(order) {
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1C1009;">
     <tr>
       <td align="center" style="padding:28px 24px;">
+        <!-- MODIFICA QUI: indirizzo panificio nel footer -->
         <p style="margin:0 0 4px;font-size:12px;color:#7A6550;line-height:1.9;">
           Panificio Roccafiorita · Via Pozzo Danile n.12–14 · Sant'Angelo di Brolo (ME) 98060
         </p>
+        <!-- MODIFICA QUI: P.IVA nel footer -->
         <p style="margin:0 0 10px;font-size:12px;color:#7A6550;">
-          P.IVA 00000000000 <!-- TODO: sostituire con P.IVA reale -->
+          P.IVA 00000000000
         </p>
         <p style="margin:0;font-size:11px;color:#4A3824;line-height:1.6;">
           Hai ricevuto questa email perché hai effettuato un ordine su panificioroccafiorita.it

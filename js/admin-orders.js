@@ -131,6 +131,16 @@
           });
       });
     });
+
+    container.querySelectorAll('.btn-toggle-details').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const target = document.getElementById(this.dataset.target);
+        if (!target) return;
+        const isOpen = target.style.display !== 'none';
+        target.style.display = isOpen ? 'none' : '';
+        this.textContent = isOpen ? 'Dettagli' : 'Chiudi';
+      });
+    });
   }
 
   // ============================================================
@@ -162,16 +172,29 @@
       ? `<span class="badge badge-success">Spedito${shippedDate ? ' ' + shippedDate : ''}</span>`
       : `<span class="badge badge-warning">Da spedire</span>`;
 
-    const customer   = o.customer || {};
-    const items      = Array.isArray(o.items) ? o.items : [];
-    const itemsHtml  = items.length > 0
+    // Dati cliente — compatibile con schema nuovo (colonne piatte) e vecchio (jsonb customer)
+    const customerName  = o.customerName  || (o.customer && o.customer.name)  || '—';
+    const customerEmail = o.customerEmail || (o.customer && o.customer.email) || '';
+    const customerPhone = o.customerPhone || (o.customer && o.customer.phone) || '';
+    const addr          = o.shippingAddress || (o.customer && o.customer.address) || {};
+    const addressParts  = [
+      addr.street,
+      addr.zip && addr.city ? `${addr.zip} ${addr.city}` : addr.city,
+      addr.province,
+    ].filter(Boolean);
+    const addressText = addressParts.join(', ');
+
+    const items = Array.isArray(o.items) ? o.items : [];
+    const itemsHtml = items.length > 0
       ? items.map(i => `
           <div class="order-item-row">
-            <span class="order-item-name">${sanitize(i.productName || i.name || '?')}</span>
-            <span class="order-item-qty">${i.qty || i.kg || 1} cad.</span>
-            <span class="order-item-price">€${((i.subtotal || (i.pricePerKg || 0) * (i.qty || i.kg || 1)) || 0).toFixed(2)}</span>
+            <span class="order-item-name">${sanitize(i.name || i.productName || '?')}</span>
+            <span class="order-item-qty">${i.quantity || i.qty || 1} conf.</span>
+            <span class="order-item-price">€${Number(i.subtotal || 0).toFixed(2)}</span>
           </div>`).join('')
       : '<em style="color:var(--color-text-muted); font-size:0.85rem;">Nessun articolo</em>';
+
+    const detailsId = 'order-details-' + (o.id || '').replace(/[^a-zA-Z0-9]/g, '');
 
     const shipBtn = o.status !== 'shipped'
       ? `<button class="btn-admin btn-success btn-sm btn-ship" data-id="${sanitize(o.id)}">
@@ -185,27 +208,35 @@
 
     return `
       <div class="reservation-card${isNew ? ' order-card--new' : ''}">
-        <div class="reservation-top" style="flex-wrap:wrap; gap:0.5rem;">
-          <div class="reservation-date">
-            <strong>${sanitize(customer.name || '—')}</strong>
-          </div>
-          <div style="font-size:0.82rem; color:var(--color-text-muted);">
-            ${sanitize(customer.email || '')}
-            ${customer.city ? ' · ' + sanitize(customer.city) : ''}
+
+        <div class="reservation-top" style="flex-wrap:wrap; gap:0.5rem; align-items:center;">
+          <div>
+            <strong style="font-size:0.95rem;">${sanitize(customerName)}</strong>
           </div>
           ${statusBadge}
-          <div style="margin-left:auto; font-size:0.8rem; color:var(--color-text-muted);">${date}</div>
+          <div style="margin-left:auto; display:flex; gap:0.5rem; align-items:center;">
+            <span style="font-size:0.8rem; color:var(--color-text-muted);">${date}</span>
+            <button class="btn-admin btn-ghost btn-sm btn-toggle-details" data-target="${detailsId}">Dettagli</button>
+          </div>
         </div>
 
-        <div class="order-items" style="margin:0.75rem 0; padding:0.75rem; background:var(--color-surface); border-radius:6px;">
-          ${itemsHtml}
+        <!-- Sezione dettagli espandibile -->
+        <div id="${detailsId}" style="display:none; margin-top:0.75rem; padding:0.75rem; background:var(--color-surface); border-radius:6px; font-size:0.88rem; line-height:1.7;">
+          <div style="margin-bottom:0.5rem;">
+            ${customerEmail ? `<div><a href="mailto:${sanitize(customerEmail)}" style="color:var(--color-gold);">${sanitize(customerEmail)}</a></div>` : ''}
+            ${customerPhone ? `<div style="color:var(--color-text-muted);">${sanitize(customerPhone)}</div>` : ''}
+            ${addressText   ? `<div style="color:var(--color-text-muted); margin-top:0.25rem;">${sanitize(addressText)}</div>` : ''}
+          </div>
+          <div style="border-top:1px solid var(--color-border); padding-top:0.5rem; margin-top:0.5rem;">
+            ${itemsHtml}
+          </div>
         </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-top:0.75rem;">
           <div class="order-totals" style="font-size:0.9rem;">
-            <span>Spedizione: <strong>€${(o.shipping || 0).toFixed(2)}</strong></span>
+            <span>Spedizione: <strong>€${Number(o.shipping || o.shipping_cost || 0).toFixed(2)}</strong></span>
             &nbsp;·&nbsp;
-            <span>Totale: <strong style="color:var(--color-espresso);">€${(o.total || 0).toFixed(2)}</strong></span>
+            <span>Totale: <strong style="color:var(--color-espresso);">€${Number(o.total || 0).toFixed(2)}</strong></span>
             ${o.paymentMethod ? `&nbsp;·&nbsp;<span style="color:var(--color-text-muted);">${sanitize(o.paymentMethod)}</span>` : ''}
           </div>
           <div style="display:flex; gap:0.5rem;">
@@ -213,7 +244,7 @@
           </div>
         </div>
 
-        <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:0.5rem;">
+        <div style="font-size:0.75rem; color:var(--color-text-muted); margin-top:0.4rem;">
           ID: ${sanitize(o.id || '—')}
         </div>
       </div>`;

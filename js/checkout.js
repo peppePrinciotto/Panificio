@@ -58,6 +58,7 @@
     };
 
     cardElement = elements.create('card', {
+      hidePostalCode: true,
       style: {
         base: {
           fontFamily:    "'Lora', Georgia, serif",

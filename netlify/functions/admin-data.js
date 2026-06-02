@@ -109,17 +109,24 @@ function rowToProduct(r) {
 // Conversione riga ordine Supabase → oggetto JS
 // ============================================================
 function rowToOrder(r) {
+  // Compatibile con schema nuovo (colonne piatte) e vecchio (jsonb customer)
+  const legacyCustomer = r.customer || {};
   return {
-    id:            r.id,
-    date:          r.created_at,
-    createdAt:     r.created_at,
-    customer:      r.customer   || {},
-    items:         r.items      || [],
-    total:         r.total      || 0,
-    shipping:      r.shipping   || 0,
-    paymentMethod: r.payment_method || '',
-    status:        r.status     || 'paid',
-    shippedAt:     r.shipped_at || null,
+    id:              r.id,
+    date:            r.created_at,
+    createdAt:       r.created_at,
+    customerName:    r.customer_name  || legacyCustomer.name  || '',
+    customerEmail:   r.customer_email || legacyCustomer.email || '',
+    customerPhone:   r.customer_phone || legacyCustomer.phone || '',
+    shippingAddress: r.shipping_address || legacyCustomer.address || {},
+    customer:        legacyCustomer,
+    items:           r.items      || [],
+    subtotal:        r.subtotal   || 0,
+    total:           r.total      || 0,
+    shipping:        r.shipping_cost || r.shipping || 0,
+    paymentMethod:   r.payment_method || '',
+    status:          r.status     || 'paid',
+    shippedAt:       r.shipped_at || null,
   };
 }
 
@@ -300,6 +307,34 @@ exports.handler = async function (event) {
         else console.error('Seed product errore:', res.status, res.data);
       }
       return { statusCode: 200, headers, body: JSON.stringify({ seeded: true, count }) };
+    }
+
+    // ── GET settings ──────────────────────────────────────────────
+    if (method === 'GET' && action === 'settings') {
+      const res = await supabaseRequest('GET', '/settings?select=key,value');
+      if (res.status >= 400) {
+        return { statusCode: res.status, headers, body: JSON.stringify({ error: res.data }) };
+      }
+      const map = {};
+      (res.data || []).forEach(row => { map[row.key] = row.value; });
+      return { statusCode: 200, headers, body: JSON.stringify(map) };
+    }
+
+    // ── PUT settings ──────────────────────────────────────────────
+    if (method === 'PUT' && action === 'settings') {
+      const { key, value } = body;
+      if (!key) return { statusCode: 400, headers, body: JSON.stringify({ error: 'key mancante' }) };
+      const row = { key, value: String(value), updated_at: new Date().toISOString() };
+      const res = await supabaseRequest('POST', '/settings', row);
+      if (res.status >= 400) {
+        // Se già esiste, aggiorna con PATCH
+        const patch = await supabaseRequest('PATCH', `/settings?key=eq.${encodeURIComponent(key)}`, { value: String(value), updated_at: new Date().toISOString() });
+        if (patch.status >= 400) {
+          return { statusCode: patch.status, headers, body: JSON.stringify({ error: patch.data }) };
+        }
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
     }
 
     return { statusCode: 404, headers, body: JSON.stringify({ error: 'Azione non riconosciuta: ' + action }) };
