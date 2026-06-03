@@ -363,7 +363,7 @@
       const msgEl = successEl.querySelector('p');
       if (msgEl) {
         msgEl.innerHTML =
-          'Ordine confermato! Ti abbiamo inviato una email di conferma a ' +
+          'Ti abbiamo inviato una email di conferma a ' +
           `<strong>${sanitize(email || '')}</strong>.`;
       }
     }

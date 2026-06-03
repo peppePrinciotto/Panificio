@@ -101,13 +101,20 @@ function buildEmailHtml(order) {
 
   <!-- ── HEADER ── -->
   <table width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background:#FDFAF4;border-bottom:3px solid #A07830;">
+         style="background:#1C1009;">
     <tr>
-      <td align="center" style="padding:36px 24px;">
-        <div style="font-size:10px;letter-spacing:5px;text-transform:uppercase;color:#7A6550;margin-bottom:8px;">FORNO ARTIGIANALE SICILIANO</div>
-        <div style="font-size:32px;font-weight:bold;color:#A07830;letter-spacing:3px;line-height:1;">Panificio</div>
-        <div style="font-size:20px;color:#C9A55A;letter-spacing:2px;margin-top:4px;">Roccafiorita</div>
-        <div style="width:56px;height:2px;background:#A07830;margin:18px auto 0;"></div>
+      <td align="center" style="padding:40px 24px 36px;">
+        <div style="font-size:11px;letter-spacing:6px;text-transform:uppercase;
+                    color:#7A6550;font-family:Georgia,serif;margin-bottom:16px;">
+          PANIFICIO
+        </div>
+        <div style="font-size:34px;font-weight:bold;color:#FFFFFF;
+                    letter-spacing:3px;font-family:Georgia,serif;
+                    line-height:1.1;">
+          Roccafiorita
+        </div>
+        <div style="width:56px;height:2px;background:#A07830;
+                    margin:18px auto 0;"></div>
       </td>
     </tr>
   </table>
