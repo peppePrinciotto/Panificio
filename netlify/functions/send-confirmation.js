@@ -100,7 +100,8 @@ function buildEmailHtml(order) {
 <body style="margin:0;padding:0;background:#F5EFE0;font-family:Georgia,'Times New Roman',serif;color:#1C1009;">
 
   <!-- ── HEADER ── -->
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1C1009;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background:#FDFAF4;border-bottom:3px solid #A07830;">
     <tr>
       <td align="center" style="padding:36px 24px;">
         <div style="font-size:10px;letter-spacing:5px;text-transform:uppercase;color:#7A6550;margin-bottom:8px;">FORNO ARTIGIANALE SICILIANO</div>

@@ -216,7 +216,7 @@
         ${imgContent}
         <div class="product-body">
           <h3 class="product-name">${sanitize(product.name)}</h3>
-          ${product.weightG ? `<span class="product-weight">Confezione da ${sanitize(String(product.weightG))}g</span>` : ''}
+          ${product.weightG ? `<span class="product-weight" style="font-variant-caps:normal;text-transform:none;">Confezione da ${sanitize(String(product.weightG))}g</span>` : ''}
           <p class="product-desc">${sanitize(product.description || '')}</p>
 
           <div class="qty-selector">
