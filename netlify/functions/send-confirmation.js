@@ -101,20 +101,19 @@ function buildEmailHtml(order) {
 
   <!-- ── HEADER ── -->
   <table width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background:#1C1009;">
+         style="background:#FDFAF4;border-bottom:2px solid #E8DCC8;">
     <tr>
       <td align="center" style="padding:40px 24px 36px;">
-        <div style="font-size:11px;letter-spacing:6px;text-transform:uppercase;
-                    color:#7A6550;font-family:Georgia,serif;margin-bottom:16px;">
-          PANIFICIO
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:13px;
+                    font-weight:400;letter-spacing:5px;text-transform:uppercase;
+                    color:#7A6550;margin-bottom:6px;">
+          Panificio
         </div>
-        <div style="font-size:34px;font-weight:bold;color:#FFFFFF;
-                    letter-spacing:3px;font-family:Georgia,serif;
-                    line-height:1.1;">
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:36px;
+                    font-weight:700;color:#3D2314;letter-spacing:2px;line-height:1.1;">
           Roccafiorita
         </div>
-        <div style="width:56px;height:2px;background:#A07830;
-                    margin:18px auto 0;"></div>
+        <div style="width:48px;height:2px;background:#A07830;margin:16px auto 0;"></div>
       </td>
     </tr>
   </table>
@@ -240,9 +239,6 @@ function buildEmailHtml(order) {
             <td style="padding:32px 8px 48px;">
               <p style="font-size:16px;color:#3D2314;line-height:1.8;margin:0 0 6px;">
                 Grazie per aver scelto il Panificio Roccafiorita.
-              </p>
-              <p style="font-size:15px;color:#A07830;font-style:italic;margin:0 0 18px;">
-                "Il pane fatto con amore, consegnato a casa tua."
               </p>
               <p style="font-size:14px;color:#3D2314;margin:0;line-height:1.7;">
                 Con affetto,<br>
