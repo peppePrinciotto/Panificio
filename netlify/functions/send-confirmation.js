@@ -101,19 +101,19 @@ function buildEmailHtml(order) {
 
   <!-- ── HEADER ── -->
   <table width="100%" cellpadding="0" cellspacing="0" border="0"
-         style="background:#FDFAF4;border-bottom:2px solid #E8DCC8;">
+         style="background:#6B3A22;">
     <tr>
       <td align="center" style="padding:40px 24px 36px;">
-        <div style="font-family:'Playfair Display',Georgia,serif;font-size:13px;
-                    font-weight:400;letter-spacing:5px;text-transform:uppercase;
-                    color:#7A6550;margin-bottom:6px;">
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:12px;
+                    font-weight:400;letter-spacing:6px;text-transform:uppercase;
+                    color:#C9A55A;margin-bottom:8px;">
           Panificio
         </div>
         <div style="font-family:'Playfair Display',Georgia,serif;font-size:36px;
-                    font-weight:700;color:#3D2314;letter-spacing:2px;line-height:1.1;">
+                    font-weight:700;color:#FDFAF4;letter-spacing:2px;line-height:1.1;">
           Roccafiorita
         </div>
-        <div style="width:48px;height:2px;background:#A07830;margin:16px auto 0;"></div>
+        <div style="width:48px;height:2px;background:#C9A55A;margin:16px auto 0;"></div>
       </td>
     </tr>
   </table>
@@ -135,10 +135,7 @@ function buildEmailHtml(order) {
               </p>
               <!-- MODIFICA QUI: messaggio secondario (descrizione del panificio) -->
               <p style="font-size:15px;line-height:1.85;color:#5C4030;margin:0 0 32px;">
-                Siamo già al lavoro per prepararti i nostri prodotti con la stessa dedizione
-                di sempre. Ogni pezzo viene impastato e cotto a mano nella nostra bottega
-                a Sant'Angelo di Brolo, seguendo ricette tramandate di generazione in generazione
-                nella nostra famiglia.
+                Siamo già al lavoro per prepararti i nostri prodotti con la stessa dedizione di sempre.
               </p>
             </td>
           </tr>
