@@ -305,8 +305,19 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Body non valido (JSON malformato)' }) };
   }
 
+  // Normalizza struttura ordine — supporta formato piatto
+  // (da stripe-webhook) e formato nested (da checkout diretto)
+  if (!input.customer && input.customer_name) {
+    input.customer = {
+      name:    input.customer_name  || '',
+      email:   input.customer_email || '',
+      phone:   input.customer_phone || '',
+      address: input.shipping_address || {},
+    };
+  }
+
   // Validazione minima
-  if (!input.customer || !input.customer.email) {
+  if (!input.customer?.email && !input.customer_email) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: 'Dati cliente mancanti' }) };
   }
   if (!Array.isArray(input.items) || input.items.length === 0) {
