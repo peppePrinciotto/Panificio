@@ -1,71 +1,33 @@
 // send-confirmation.js — Netlify Function
 // Riceve un oggetto ordine completo e invia l'email di conferma
-// al cliente via Resend. Il salvataggio su Supabase è delegato
-// a stripe-webhook.js (per pagamenti Stripe) o al chiamante.
+// al cliente via Gmail (Nodemailer).
 //
 // Env vars richieste:
-//   RESEND_API_KEY
+//   GMAIL_USER         — indirizzo Gmail mittente (es. panificio@gmail.com)
+//   GMAIL_APP_PASSWORD — App Password Google (non la password normale)
 
 'use strict';
 
-const https = require('https');
-
-const RESEND_KEY = process.env.RESEND_API_KEY;
-
 // ============================================================
-// Helper HTTP per Resend
+// Invia email via Gmail (Nodemailer)
 // ============================================================
-function httpsPost(hostname, path, body, extraHeaders) {
-  return new Promise((resolve, reject) => {
-    const bodyStr = JSON.stringify(body);
-    const headers = Object.assign(
-      {
-        'Content-Type':   'application/json',
-        'Content-Length': Buffer.byteLength(bodyStr).toString(),
-      },
-      extraHeaders || {}
-    );
+async function sendEmailViaGmail(order) {
+  const nodemailer = require('nodemailer');
 
-    const req = https.request(
-      { hostname, port: 443, method: 'POST', path, headers },
-      (res) => {
-        let data = '';
-        res.on('data', (c) => { data += c; });
-        res.on('end', () => {
-          let parsed = null;
-          try { if (data.trim()) parsed = JSON.parse(data); } catch (_) {}
-          resolve({ status: res.statusCode, data: parsed });
-        });
-      }
-    );
-    req.on('error', reject);
-    req.write(bodyStr);
-    req.end();
-  });
-}
-
-// ============================================================
-// Invia email via Resend
-// ============================================================
-async function sendEmailViaResend(order) {
-  if (!RESEND_KEY) throw new Error('RESEND_API_KEY non configurato');
-
-  const res = await httpsPost(
-    'api.resend.com',
-    '/emails',
-    {
-      from:    'onboarding@resend.dev',       // ← MODIFICA QUI: mittente (es. 'Panificio Roccafiorita <noreply@tuodominio.it>')
-      to:      [order.customer.email],
-      subject: 'Grazie per il tuo ordine — Panificio Roccafiorita', // ← MODIFICA QUI: oggetto email
-      html:    buildEmailHtml(order),
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
     },
-    { 'Authorization': 'Bearer ' + RESEND_KEY }
-  );
+  });
 
-  if (res.status >= 400) {
-    throw new Error('Resend: ' + JSON.stringify(res.data));
-  }
-  return res.data;
+  await transporter.sendMail({
+    from:    '"Panificio Roccafiorita" <' + process.env.GMAIL_USER + '>',
+    to:      order.customer?.email || order.customer_email,
+    subject: 'Grazie per il tuo ordine — Panificio Roccafiorita',
+    html:    buildEmailHtml(order),
+  });
 }
 
 // ============================================================
@@ -127,13 +89,10 @@ function buildEmailHtml(order) {
           <!-- Saluto -->
           <tr>
             <td style="padding:40px 8px 0;">
-              <!-- MODIFICA QUI: saluto personalizzato (es. "Cara" per clienti donna) -->
               <p style="font-size:22px;color:#3D2314;margin:0 0 16px;line-height:1.3;">Caro ${esc(firstName)},</p>
-              <!-- MODIFICA QUI: messaggio principale (riga di conferma) -->
               <p style="font-size:15px;line-height:1.85;color:#3D2314;margin:0 0 10px;">
                 il tuo ordine è confermato!
               </p>
-              <!-- MODIFICA QUI: messaggio secondario (descrizione del panificio) -->
               <p style="font-size:15px;line-height:1.85;color:#5C4030;margin:0 0 32px;">
                 Siamo già al lavoro per prepararti i nostri prodotti con la stessa dedizione di sempre.
               </p>
@@ -207,7 +166,6 @@ function buildEmailHtml(order) {
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#E8DCC8;border-left:3px solid #A07830;border-radius:0 4px 4px 0;">
                 <tr>
                   <td style="padding:16px 20px;">
-                    <!-- MODIFICA QUI: messaggio finale con tempi di spedizione -->
                     <p style="margin:0;font-size:14px;color:#3D2314;line-height:1.85;">
                       <strong>Tempi di consegna stimati:</strong> i tuoi prodotti vengono preparati
                       con cura e affidati al corriere entro <strong>2–3 giorni lavorativi</strong>.
@@ -253,11 +211,9 @@ function buildEmailHtml(order) {
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1C1009;">
     <tr>
       <td align="center" style="padding:28px 24px;">
-        <!-- MODIFICA QUI: indirizzo panificio nel footer -->
         <p style="margin:0 0 4px;font-size:12px;color:#7A6550;line-height:1.9;">
           Panificio Roccafiorita · Via Pozzo Danile n.12–14 · Sant'Angelo di Brolo (ME) 98060
         </p>
-        <!-- MODIFICA QUI: P.IVA nel footer -->
         <p style="margin:0 0 10px;font-size:12px;color:#7A6550;">
           P.IVA 00000000000
         </p>
@@ -324,15 +280,15 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Nessun articolo nell'ordine" }) };
   }
 
-  // Invia email via Resend
+  // Invia email via Gmail
   try {
-    await sendEmailViaResend(input);
+    await sendEmailViaGmail(input);
   } catch (err) {
-    console.error('[send-confirmation] Resend:', err.message);
+    console.error('[send-confirmation] Errore Gmail:', err.message);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Impossibile inviare la email di conferma.' }),
+      body: JSON.stringify({ error: err.message }),
     };
   }
 
