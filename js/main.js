@@ -20,7 +20,7 @@
     initLegalModals();
     initDateMin();
     initCookieBanner();
-    initContentFromStorage();
+    initContentFromSupabase();
     initCartSwipeClose();
   });
 
@@ -678,61 +678,100 @@
   }
 
   // ============================================================
-  // Contenuti da localStorage (gestiti dall'admin)
+  // Contenuti da Supabase (settings table, lettura pubblica)
   // ============================================================
-  function initContentFromStorage() {
-    try {
-      const stored = localStorage.getItem('roccafiorita_content');
-      if (!stored) return;
-      const c = JSON.parse(stored);
+  function initContentFromSupabase() {
+    const controller = new AbortController();
+    const timeout = setTimeout(function () { controller.abort(); }, 5000);
 
-      if (c.anno) {
-        document.querySelectorAll('.anno').forEach(el => { el.textContent = c.anno; });
+    const url = CONFIG.supabase.url + '/rest/v1/settings?select=key,value';
+
+    fetch(url, {
+      headers: {
+        'apikey':        CONFIG.supabase.anonKey,
+        'Authorization': 'Bearer ' + CONFIG.supabase.anonKey,
+      },
+      signal: controller.signal,
+    })
+      .then(function (res) {
+        clearTimeout(timeout);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (rows) {
+        const s = {};
+        rows.forEach(function (r) { s[r.key] = r.value; });
+        applyContentToDOM(s);
+      })
+      .catch(function (err) {
+        clearTimeout(timeout);
+        console.warn('[Contenuti] Supabase non raggiungibile, mantengo valori HTML:', err.message);
+      });
+  }
+
+  function applyContentToDOM(s) {
+    // Indirizzo
+    if (s.address) {
+      const el = document.getElementById('indirizzo-display');
+      if (el) el.textContent = s.address;
+    }
+
+    // Telefono principale
+    if (s.phone_primary) {
+      document.querySelectorAll('[data-content="telefono"]').forEach(function (el) {
+        el.textContent = s.phone_primary;
+        if (el.tagName === 'A') el.href = 'tel:' + s.phone_primary.replace(/\s/g, '');
+      });
+    }
+
+    // Telefono secondario
+    if (s.phone_secondary) {
+      document.querySelectorAll('[data-content="telefono2"]').forEach(function (el) {
+        el.textContent = s.phone_secondary;
+        if (el.tagName === 'A') el.href = 'tel:' + s.phone_secondary.replace(/\s/g, '');
+      });
+    }
+
+    // WhatsApp
+    if (s.whatsapp_number) {
+      const wa = document.getElementById('whatsapp-btn');
+      if (wa) wa.href = 'https://wa.me/' + s.whatsapp_number.replace(/[^0-9]/g, '');
+    }
+
+    // Email di contatto
+    if (s.email_contact) {
+      document.querySelectorAll('[data-content="email"]').forEach(function (el) {
+        el.textContent = s.email_contact;
+        if (el.tagName === 'A') el.href = 'mailto:' + s.email_contact;
+      });
+    }
+
+    // Google Maps iframe
+    if (s.maps_embed_url) {
+      const iframe = document.getElementById('maps-iframe');
+      if (iframe) iframe.src = s.maps_embed_url;
+    }
+
+    // Orari di apertura
+    const DAYS = [
+      { key: 'hours_monday',    label: 'Lunedì'    },
+      { key: 'hours_tuesday',   label: 'Martedì'   },
+      { key: 'hours_wednesday', label: 'Mercoledì' },
+      { key: 'hours_thursday',  label: 'Giovedì'   },
+      { key: 'hours_friday',    label: 'Venerdì'   },
+      { key: 'hours_saturday',  label: 'Sabato'    },
+      { key: 'hours_sunday',    label: 'Domenica'  },
+    ];
+    const hasAnyHours = DAYS.some(function (d) { return s[d.key]; });
+    if (hasAnyHours) {
+      const el = document.getElementById('orari-display');
+      if (el) {
+        el.innerHTML = DAYS
+          .filter(function (d) { return s[d.key]; })
+          .map(function (d) { return sanitize(d.label) + ': ' + sanitize(s[d.key]); })
+          .join('<br />');
       }
-
-      if (c.indirizzo) {
-        const el = document.getElementById('indirizzo-display');
-        if (el) el.textContent = c.indirizzo;
-      }
-
-      if (c.telefono) {
-        document.querySelectorAll('[data-content="telefono"]').forEach(el => {
-          el.textContent = c.telefono;
-          if (el.tagName === 'A') el.href = 'tel:' + c.telefono.replace(/\s/g, '');
-        });
-        const wa = document.getElementById('whatsapp-btn');
-        if (wa) wa.href = 'https://wa.me/' + c.telefono.replace(/[^0-9]/g, '');
-      }
-
-      if (c.telefono2) {
-        document.querySelectorAll('[data-content="telefono2"]').forEach(el => {
-          el.textContent = c.telefono2;
-          if (el.tagName === 'A') el.href = 'tel:' + c.telefono2.replace(/\s/g, '');
-        });
-      }
-
-      if (c.email) {
-        document.querySelectorAll('[data-content="email"]').forEach(el => {
-          el.textContent = c.email;
-          if (el.tagName === 'A') el.href = 'mailto:' + c.email;
-        });
-      }
-
-      if (c.mapsLink) {
-        const iframe = document.getElementById('maps-iframe');
-        if (iframe) iframe.src = c.mapsLink;
-      }
-
-      if (c.orari && c.orari.length) {
-        const el = document.getElementById('orari-display');
-        if (el) {
-          el.innerHTML = c.orari
-            .map(r => `${sanitize(r.giorno)}: ${sanitize(r.orario)}`)
-            .join('<br />');
-        }
-      }
-
-    } catch (_) {}
+    }
   }
 
   // ============================================================

@@ -141,12 +141,19 @@
   function showPaymentStep() {
     step = 'payment';
     const cardWrap = document.getElementById('stripe-card-wrap');
-    if (cardWrap) cardWrap.style.display = '';
+    if (cardWrap) cardWrap.style.display = 'block';
 
     // Monta il card element solo ora che il container è visibile
     if (cardElement && !cardMounted) {
       cardElement.mount('#stripe-card-element');
       cardMounted = true;
+
+      cardElement.on('focus', function () {
+        document.getElementById('stripe-card-element')?.classList.add('is-focused');
+      });
+      cardElement.on('blur', function () {
+        document.getElementById('stripe-card-element')?.classList.remove('is-focused');
+      });
     }
 
     const payBtn = document.getElementById('stripe-pay-btn');
