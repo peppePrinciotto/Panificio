@@ -324,15 +324,25 @@ exports.handler = async function (event) {
     if (method === 'PUT' && action === 'settings') {
       const { key, value } = body;
       if (!key) return { statusCode: 400, headers, body: JSON.stringify({ error: 'key mancante' }) };
-      const row = { key, value: String(value), updated_at: new Date().toISOString() };
-      const res = await supabaseRequest('POST', '/settings', row);
-      if (res.status >= 400) {
-        // Se già esiste, aggiorna con PATCH
-        const patch = await supabaseRequest('PATCH', `/settings?key=eq.${encodeURIComponent(key)}`, { value: String(value), updated_at: new Date().toISOString() });
-        if (patch.status >= 400) {
-          return { statusCode: patch.status, headers, body: JSON.stringify({ error: patch.data }) };
-        }
-        return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+
+      // Upsert: inserisce o aggiorna in base alla chiave primaria (key)
+      const SUPABASE_URL2 = process.env.SUPABASE_URL || 'https://oyzlsznibhjnpejzkncw.supabase.co';
+      const SERVICE_KEY2  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const upsertRes = await fetch(SUPABASE_URL2 + '/rest/v1/settings', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + SERVICE_KEY2,
+          'apikey':        SERVICE_KEY2,
+          'Content-Type':  'application/json',
+          'Prefer':        'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({ key, value: String(value) }),
+      });
+
+      if (!upsertRes.ok) {
+        const errText = await upsertRes.text();
+        console.error('Supabase upsert settings errore:', upsertRes.status, errText);
+        return { statusCode: upsertRes.status, headers, body: JSON.stringify({ error: errText }) };
       }
       return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
     }
