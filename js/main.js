@@ -746,10 +746,13 @@
       });
     }
 
-    // Google Maps iframe
-    if (s.maps_embed_url) {
+    // Google Maps iframe — solo embed URL validi (non link brevi maps.app.goo.gl)
+    const mapsUrl = s.maps_embed_url && s.maps_embed_url.startsWith('https://www.google.com/maps/embed')
+      ? s.maps_embed_url
+      : null;
+    if (mapsUrl) {
       const iframe = document.getElementById('maps-iframe');
-      if (iframe) iframe.src = s.maps_embed_url;
+      if (iframe) iframe.src = mapsUrl;
     }
 
     // Orari di apertura

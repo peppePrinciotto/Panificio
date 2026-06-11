@@ -6,6 +6,8 @@
 
   const API = '/.netlify/functions/admin-data';
 
+  const DEFAULT_MAPS_EMBED_URL = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3139.3022645748806!2d14.883077376032945!3d38.10990179278447!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x131699847d0f95fd%3A0xc4bd9e121b864310!2sVia%20Pozzo%20Danile%2C%2012%2C%2098060%20Sant%27Angelo%20di%20Brolo%20ME!5e0!3m2!1sit!2sit!4v1778185992670!5m2!1sit!2sit';
+
   const DAYS = [
     { key: 'hours_monday',    label: 'Lunedì'    },
     { key: 'hours_tuesday',   label: 'Martedì'   },
@@ -143,11 +145,12 @@
             <div class="form-group">
               <label for="maps_embed_url">Link Google Maps (embed URL)</label>
               <input type="text" id="maps_embed_url"
-                     value="${val(settings, 'maps_embed_url')}"
+                     value="${val(settings, 'maps_embed_url', DEFAULT_MAPS_EMBED_URL)}"
                      placeholder="https://www.google.com/maps/embed?pb=..." />
               <span style="font-size:0.78rem; color:var(--color-text-muted); margin-top:0.2rem; display:block;">
-                Vai su Google Maps → Condividi → Incorpora una mappa → copia l'URL dall'attributo src dell'iframe
+                ⚠️ Deve iniziare con <strong>https://www.google.com/maps/embed</strong> — vai su Google Maps → Condividi → Incorpora una mappa → copia l'URL dall'attributo <code>src</code> dell'iframe. I link brevi (maps.app.goo.gl) non funzionano.
               </span>
+              <span id="maps-url-warning" style="display:none; font-size:0.78rem; color:#991B1B; margin-top:0.2rem; display:block;"></span>
             </div>
 
           </div>
@@ -193,6 +196,17 @@
   // Salvataggio di tutti i campi
   // ============================================================
   function handleSave() {
+    // Valida URL Maps prima di salvare
+    const mapsInput = document.getElementById('maps_embed_url');
+    if (mapsInput && mapsInput.value.trim()) {
+      const mapsVal = mapsInput.value.trim();
+      if (!mapsVal.startsWith('https://www.google.com/maps/embed')) {
+        showFeedback('URL Google Maps non valido. Deve iniziare con https://www.google.com/maps/embed (non usare link brevi maps.app.goo.gl).', false);
+        mapsInput.focus();
+        return;
+      }
+    }
+
     const btn = document.getElementById('content-save-btn');
     if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
 

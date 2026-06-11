@@ -1,7 +1,8 @@
 // stripe-webhook.js — Netlify Function
 // Riceve eventi da Stripe, verifica la firma e gestisce
-// payment_intent.succeeded: salva l'ordine su Supabase
-// e chiama send-confirmation per l'email al cliente.
+// payment_intent.succeeded: salva l'ordine su Supabase,
+// notifica il titolare su Telegram e chiama send-confirmation
+// per l'email al cliente.
 //
 // Env vars richieste:
 //   STRIPE_SECRET_KEY
@@ -9,10 +10,88 @@
 //   SUPABASE_URL
 //   SUPABASE_SERVICE_ROLE_KEY
 //   URL  (impostata automaticamente da Netlify — URL del sito)
+// Env vars opzionali (notifiche Telegram):
+//   TELEGRAM_BOT_TOKEN
+//   TELEGRAM_CHAT_ID
 
 'use strict';
 
 const Stripe = require('stripe');
+
+// ============================================================
+// Escape HTML per i messaggi Telegram (parse_mode: HTML)
+// ============================================================
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// ============================================================
+// Notifica Telegram al titolare per ogni nuovo ordine
+// Degradazione morbida: se le env var mancano o la chiamata
+// fallisce, logga ma non lancia mai (non blocca l'ordine).
+// ============================================================
+async function notifyTelegram(order) {
+  const TOKEN   = process.env.TELEGRAM_BOT_TOKEN;
+  const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+  if (!TOKEN || !CHAT_ID) {
+    console.warn('[telegram] TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID non configurati — notifica saltata');
+    return;
+  }
+
+  // Riga prodotti
+  const itemLines = (order.items || []).map(function (i) {
+    const qty = Number(i.quantity || 1);
+    const sub = Number(i.subtotal || 0).toFixed(2);
+    return `• ${escapeHtml(i.name || '—')} × ${qty} — €${sub}`;
+  }).join('\n');
+
+  // Spedizione
+  const shippingLine = (Number(order.shipping_cost) === 0)
+    ? 'Gratuita'
+    : `€${Number(order.shipping_cost || 0).toFixed(2)}`;
+
+  // Indirizzo di consegna
+  const addr     = order.shipping_address || {};
+  const province = addr.province ? ` (${escapeHtml(addr.province)})` : '';
+  const addrLines = [
+    escapeHtml(addr.street || ''),
+    `${escapeHtml(addr.zip || '')} ${escapeHtml(addr.city || '')}${province}`.trim(),
+    'Italia',
+  ].filter(Boolean).join('\n');
+
+  const text =
+    `🥖 <b>NUOVO ORDINE</b>\n\n` +
+    `🧾 <b>Ordine:</b> ${escapeHtml(order.id)}\n` +
+    `💰 <b>Totale:</b> €${Number(order.total || 0).toFixed(2)}\n\n` +
+    `👤 <b>Cliente</b>\n` +
+    `${escapeHtml(order.customer_name || '—')}\n` +
+    (order.customer_email ? `📧 ${escapeHtml(order.customer_email)}\n` : '') +
+    (order.customer_phone ? `📞 ${escapeHtml(order.customer_phone)}\n` : '') +
+    `\n📦 <b>Prodotti</b>\n${itemLines || '—'}\n\n` +
+    `🚚 <b>Spedizione:</b> ${shippingLine}\n` +
+    `🏠 <b>Consegna</b>\n${addrLines}`;
+
+  const res = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id:                  CHAT_ID,
+      text:                     text,
+      parse_mode:               'HTML',
+      disable_web_page_preview: true,
+    }),
+  });
+
+  console.log('[telegram] sendMessage status:', res.status);
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error('[telegram] Errore invio notifica:', errText);
+  }
+}
 
 // ============================================================
 // Genera ID ordine
@@ -149,7 +228,15 @@ exports.handler = async function (event) {
     await saveOrderToSupabase(order);
   } catch (err) {
     console.error('[stripe-webhook] Errore salvataggio Supabase:', err.message);
-    // Non blocchiamo — tentiamo comunque di inviare l'email
+    // Non blocchiamo — tentiamo comunque notifica ed email
+  }
+
+  // ── Notifica Telegram al titolare ──────────────────────────────
+  try {
+    await notifyTelegram(order);
+  } catch (err) {
+    console.error('[stripe-webhook] notifyTelegram non raggiungibile:', err.message);
+    // Non blocchiamo — la notifica è best-effort
   }
 
   // ── Invia email di conferma via send-confirmation ──────────────

@@ -67,7 +67,7 @@ Google Fonts import:
 
 ## 6. config.js
 const CONFIG = {
-  stripe: { publishableKey: 'pk_test_XXXX', currency: 'eur' },
+  stripe: { Pagamento con carta non configurato — aggiorna config.js con la tua chiave Stripe: 'pk_test_XXXX', currency: 'eur' },
   paypal: { clientId: 'XXXX', currency: 'EUR' },
   formspree: {
     orderEndpoint: 'https://formspree.io/f/XXXXXXXX',

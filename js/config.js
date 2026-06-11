@@ -3,7 +3,7 @@
 
 const CONFIG = {
   stripe: {
-    publishableKey: 'pk_test_51TWeFnV05HePTgIH4U2mvaXnbbj5GVUIddVa1lcZS4GE96s1PnMJfzPI6j38cEDczfa4heYtuuzIyl0MheCDRqx400DujiqFWm', // TODO: sostituire con chiave reale da stripe.com
+    publishableKey: 'pk_live_51TWeFSV05uK5J9lYDX00Kt1Xzx2ClJSoW1ItVkCpUoYc3kAWS40ug76zQFNxrZh5RGgVM9dmLKEYUuUdDpZizFnU009uAO2D2b', // TODO: sostituire con chiave reale da stripe.com
     currency: 'eur',
   },
   paypal: {
