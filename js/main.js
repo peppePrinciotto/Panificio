@@ -746,13 +746,16 @@
       });
     }
 
-    // Google Maps iframe — solo embed URL validi (non link brevi maps.app.goo.gl)
-    const mapsUrl = s.maps_embed_url && s.maps_embed_url.startsWith('https://www.google.com/maps/embed')
-      ? s.maps_embed_url
-      : null;
-    if (mapsUrl) {
+    // Google Maps iframe — solo URL embeddabili (non link brevi maps.app.goo.gl,
+    // che non possono stare in un iframe). Sono accettati il formato classico
+    // /maps/embed?pb=... e il formato ?q=lat,lng&output=embed (generato da resolve-map).
+    const embeddable = s.maps_embed_url && (
+      s.maps_embed_url.startsWith('https://www.google.com/maps/embed') ||
+      /[?&]output=embed/.test(s.maps_embed_url)
+    );
+    if (embeddable) {
       const iframe = document.getElementById('maps-iframe');
-      if (iframe) iframe.src = mapsUrl;
+      if (iframe) iframe.src = s.maps_embed_url;
     }
 
     // Orari di apertura

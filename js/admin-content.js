@@ -148,7 +148,7 @@
                      value="${val(settings, 'maps_embed_url', DEFAULT_MAPS_EMBED_URL)}"
                      placeholder="https://www.google.com/maps/embed?pb=..." />
               <span style="font-size:0.78rem; color:var(--color-text-muted); margin-top:0.2rem; display:block;">
-                ⚠️ Deve iniziare con <strong>https://www.google.com/maps/embed</strong> — vai su Google Maps → Condividi → Incorpora una mappa → copia l'URL dall'attributo <code>src</code> dell'iframe. I link brevi (maps.app.goo.gl) non funzionano.
+                Puoi incollare un link Google Maps di qualsiasi tipo: anche il link breve di condivisione (es. <strong>https://maps.app.goo.gl/...</strong>). Al salvataggio viene convertito automaticamente in un formato compatibile con la mappa.
               </span>
               <span id="maps-url-warning" style="display:none; font-size:0.78rem; color:#991B1B; margin-top:0.2rem; display:block;"></span>
             </div>
@@ -250,20 +250,37 @@
   // ============================================================
   // Salvataggio di tutti i campi
   // ============================================================
-  function handleSave() {
-    // Valida URL Maps prima di salvare
+  // Verifica se un URL è già embeddabile in un iframe
+  function isEmbeddableMapUrl(url) {
+    return url.startsWith('https://www.google.com/maps/embed') // formato classico ?pb=
+        || /[?&]output=embed/.test(url);                       // formato ?q=lat,lng&output=embed
+  }
+
+  async function handleSave() {
+    const btn = document.getElementById('content-save-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
+
+    // Risolve il link Maps: se non è già embeddabile (es. link breve
+    // maps.app.goo.gl), lo converte tramite la funzione resolve-map.
     const mapsInput = document.getElementById('maps_embed_url');
-    if (mapsInput && mapsInput.value.trim()) {
-      const mapsVal = mapsInput.value.trim();
-      if (!mapsVal.startsWith('https://www.google.com/maps/embed')) {
-        showFeedback('URL Google Maps non valido. Deve iniziare con https://www.google.com/maps/embed (non usare link brevi maps.app.goo.gl).', false);
-        mapsInput.focus();
+    if (mapsInput && mapsInput.value.trim() && !isEmbeddableMapUrl(mapsInput.value.trim())) {
+      try {
+        const r = await fetch('/.netlify/functions/resolve-map?url=' + encodeURIComponent(mapsInput.value.trim()));
+        const data = await r.json();
+        if (r.ok && data.embedUrl) {
+          mapsInput.value = data.embedUrl; // aggiorna il campo col formato compatibile
+        } else {
+          showFeedback('Impossibile elaborare il link Google Maps. Controlla che sia un link valido a una posizione.', false);
+          if (btn) { btn.disabled = false; btn.textContent = 'Salva tutto'; }
+          mapsInput.focus();
+          return;
+        }
+      } catch (err) {
+        showFeedback('Errore durante l\'elaborazione del link Maps: ' + err.message, false);
+        if (btn) { btn.disabled = false; btn.textContent = 'Salva tutto'; }
         return;
       }
     }
-
-    const btn = document.getElementById('content-save-btn');
-    if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio…'; }
 
     const keys = [
       'phone_primary', 'phone_secondary', 'whatsapp_number',
