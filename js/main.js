@@ -775,6 +775,24 @@
           .join('<br />');
       }
     }
+
+    // Documenti legali — contenuto HTML renderito dal pannello admin.
+    // Se la chiave è presente ma vuota → placeholder.
+    // Se la chiave non esiste affatto (Supabase mai popolato) → mantiene
+    // il testo già scritto nell'HTML come fallback.
+    const LEGAL = [
+      { id: 'modal-privacy', key: 'privacy_policy' },
+      { id: 'modal-cookie',  key: 'cookie_policy'  },
+      { id: 'modal-termini', key: 'terms_conditions' },
+    ];
+    const PLACEHOLDER = '<p>Documento in fase di aggiornamento. Contattaci per informazioni.</p>';
+    LEGAL.forEach(function (doc) {
+      if (!(doc.key in s)) return; // chiave assente: lascia il fallback HTML
+      const body = document.querySelector('#' + doc.id + ' .legal-modal-body');
+      if (!body) return;
+      const value = String(s[doc.key] || '').trim();
+      body.innerHTML = value || PLACEHOLDER;
+    });
   }
 
   // ============================================================

@@ -636,7 +636,7 @@ Aggiungere in `netlify.toml` (file di configurazione Netlify nella root del prog
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://js.stripe.com https://www.paypal.com https://www.paypalobjects.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; frame-src https://js.stripe.com https://www.paypal.com; connect-src 'self' https://api.stripe.com https://formspree.io https://www.paypal.com; form-action 'self' https://formspree.io;"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://js.stripe.com https://www.paypal.com https://www.paypalobjects.com https://fonts.googleapis.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; Pagamento con carta non configurato — aggiorna config.js con la tua chiave Stripe connect-src 'self' https://api.stripe.com https://formspree.io https://www.paypal.com; form-action 'self' https://formspree.io;"
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"

@@ -173,6 +173,61 @@
           </div>
         </div>
 
+        <!-- Informazioni Legali -->
+        <div class="panel" style="margin-bottom:1.5rem;">
+          <div class="panel-header">
+            <span class="panel-title">Informazioni Legali</span>
+          </div>
+          <div class="panel-body">
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="company_name">Ragione sociale</label>
+                <input type="text" id="company_name"
+                       value="${val(settings, 'company_name')}"
+                       placeholder="Panificio Roccafiorita di ..." />
+              </div>
+              <div class="form-group">
+                <label for="vat_number">P.IVA</label>
+                <input type="text" id="vat_number"
+                       value="${val(settings, 'vat_number')}"
+                       placeholder="01234567890" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="privacy_policy">Privacy Policy</label>
+              <textarea id="privacy_policy" rows="12"
+                        style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--color-border);
+                               border-radius:4px; font-size:0.9rem; font-family:inherit; line-height:1.5;">${val(settings, 'privacy_policy')}</textarea>
+              <span style="font-size:0.78rem; color:var(--color-text-muted); margin-top:0.2rem; display:block;">
+                Testo HTML supportato (es. <code>&lt;h5&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;br&gt;</code>)
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label for="cookie_policy">Cookie Policy</label>
+              <textarea id="cookie_policy" rows="12"
+                        style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--color-border);
+                               border-radius:4px; font-size:0.9rem; font-family:inherit; line-height:1.5;">${val(settings, 'cookie_policy')}</textarea>
+              <span style="font-size:0.78rem; color:var(--color-text-muted); margin-top:0.2rem; display:block;">
+                Testo HTML supportato (es. <code>&lt;h5&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;br&gt;</code>)
+              </span>
+            </div>
+
+            <div class="form-group">
+              <label for="terms_conditions">Termini e Condizioni</label>
+              <textarea id="terms_conditions" rows="12"
+                        style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--color-border);
+                               border-radius:4px; font-size:0.9rem; font-family:inherit; line-height:1.5;">${val(settings, 'terms_conditions')}</textarea>
+              <span style="font-size:0.78rem; color:var(--color-text-muted); margin-top:0.2rem; display:block;">
+                Testo HTML supportato (es. <code>&lt;h5&gt;</code>, <code>&lt;p&gt;</code>, <code>&lt;strong&gt;</code>, <code>&lt;br&gt;</code>)
+              </span>
+            </div>
+
+          </div>
+        </div>
+
         <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
           <button type="submit" class="btn-admin btn-primary" id="content-save-btn">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -215,6 +270,8 @@
       'email_contact', 'address', 'maps_embed_url',
       'hours_monday', 'hours_tuesday', 'hours_wednesday',
       'hours_thursday', 'hours_friday', 'hours_saturday', 'hours_sunday',
+      'company_name', 'vat_number',
+      'privacy_policy', 'cookie_policy', 'terms_conditions',
     ];
 
     const saves = keys.map(function (key) {

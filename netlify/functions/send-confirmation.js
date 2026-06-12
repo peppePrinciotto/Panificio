@@ -5,8 +5,37 @@
 // Env vars richieste:
 //   GMAIL_USER         — indirizzo Gmail mittente (es. panificio@gmail.com)
 //   GMAIL_APP_PASSWORD — App Password Google (non la password normale)
+// Env vars opzionali:
+//   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY — per leggere la P.IVA (vat_number)
 
 'use strict';
+
+// ============================================================
+// Legge la P.IVA (vat_number) da Supabase settings.
+// Ritorna '' in caso di errore o assenza (degradazione morbida).
+// ============================================================
+async function getVatNumber() {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!SUPABASE_URL || !SERVICE_KEY) return '';
+
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/settings?key=eq.vat_number&select=value`,
+      {
+        headers: {
+          'apikey':        SERVICE_KEY,
+          'Authorization': 'Bearer ' + SERVICE_KEY,
+        },
+      }
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    return (Array.isArray(rows) && rows[0] && rows[0].value) ? String(rows[0].value).trim() : '';
+  } catch (_) {
+    return '';
+  }
+}
 
 // ============================================================
 // Invia email via Gmail (Nodemailer)
@@ -214,9 +243,9 @@ function buildEmailHtml(order) {
         <p style="margin:0 0 4px;font-size:12px;color:#7A6550;line-height:1.9;">
           Panificio Roccafiorita · Via Pozzo Danile n.12–14 · Sant'Angelo di Brolo (ME) 98060
         </p>
-        <p style="margin:0 0 10px;font-size:12px;color:#7A6550;">
-          P.IVA 00000000000
-        </p>
+        ${order._vatNumber ? `<p style="margin:0 0 10px;font-size:12px;color:#7A6550;">
+          P.IVA ${esc(order._vatNumber)}
+        </p>` : ''}
         <p style="margin:0;font-size:11px;color:#4A3824;line-height:1.6;">
           Hai ricevuto questa email perché hai effettuato un ordine su panificioroccafiorita.it
         </p>
@@ -279,6 +308,9 @@ exports.handler = async function (event) {
   if (!Array.isArray(input.items) || input.items.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Nessun articolo nell'ordine" }) };
   }
+
+  // Legge la P.IVA da Supabase per il footer dell'email
+  input._vatNumber = await getVatNumber();
 
   // Invia email via Gmail
   try {
