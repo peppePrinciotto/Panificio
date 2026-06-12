@@ -2,6 +2,18 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+[build.environment]
+  # js/config.js contiene SOLO chiavi pubbliche frontend (Stripe publishable
+  # key e Supabase anon/publishable key), pubbliche per design. Lo scanner
+  # segreti di Netlify le segnala come falsi positivi perché coincidono con
+  # env var impostate su Netlify. Escludiamo quel singolo file (e la chiave
+  # Stripe per nome) dallo scanner.
+  # ATTENZIONE: NON inserire MAI in config.js chiavi server-side
+  # (sk_live, GMAIL_APP_PASSWORD, RESEND_API_KEY, TELEGRAM_BOT_TOKEN, ADMIN_HASH):
+  # quelle restano scansionate ovunque e non devono comparire nel repo.
+  SECRETS_SCAN_OMIT_KEYS  = "STRIPE_PUBLISHABLE_KEY"
+  SECRETS_SCAN_OMIT_PATHS = "js/config.js"
+
 [[headers]]
   for = "/*"
   [headers.values]
