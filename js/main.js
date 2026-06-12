@@ -779,6 +779,18 @@
       }
     }
 
+    // Ragione sociale nel footer (© ... <nome>.)
+    if (s.company_name) {
+      const el = document.getElementById('footer-company');
+      if (el) el.textContent = s.company_name;
+    }
+
+    // P.IVA nel footer
+    if (s.vat_number) {
+      const el = document.getElementById('footer-vat');
+      if (el) el.textContent = s.vat_number;
+    }
+
     // Documenti legali — contenuto HTML renderito dal pannello admin.
     // Se la chiave è presente ma vuota → placeholder.
     // Se la chiave non esiste affatto (Supabase mai popolato) → mantiene
